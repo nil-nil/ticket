@@ -1,0 +1,8 @@
+.DS_store
+cmd/**/config.yaml
+
+# sample api spec
+apispec/omni.yaml
+
+tmp
+build_errors.log

@@ -1,0 +1,23 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "openapi",
+      "type": "shell",
+      "command": "oapi-codegen",
+      "args": [
+        "-config",
+        "apispec/openapi-codegen.conf.yaml",
+        "apispec/api.yaml"
+      ]
+    },
+    {
+      "label": "api",
+      "type": "shell",
+      "command": "air",
+      "args": ["-c", ".air.toml"]
+    }
+  ]
+}
