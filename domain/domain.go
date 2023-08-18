@@ -7,6 +7,7 @@ import (
 
 type UserRepository interface {
 	Find(ID uint64) (User, error)
+	Create(FirstName string, LastName string) (User, error)
 }
 
 type repository struct {
@@ -14,8 +15,9 @@ type repository struct {
 }
 
 var (
-	repo            repository
-	ErrUserNotFound = errors.New("user not found")
+	repo                       repository
+	ErrUninitializedRepository = errors.New("repository has not been initialized")
+	ErrUserNotFound            = errors.New("user not found")
 )
 
 func InitRepo(userRepository UserRepository) {
@@ -35,5 +37,15 @@ type User struct {
 }
 
 func GetUser(ID uint64) (User, error) {
+	if repo.users == nil {
+		return User{}, ErrUninitializedRepository
+	}
 	return repo.users.Find(ID)
+}
+
+func CreateUser(FirstName string, LastName string) (User, error) {
+	if repo.users == nil {
+		return User{}, ErrUninitializedRepository
+	}
+	return repo.users.Create(FirstName, LastName)
 }
