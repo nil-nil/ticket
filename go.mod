@@ -1,4 +1,4 @@
-module github.com/nil-nil/grow
+module github.com/nil-nil/ticket
 
 go 1.20
 

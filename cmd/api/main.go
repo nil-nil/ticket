@@ -12,8 +12,8 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/nil-nil/grow/api"
-	"github.com/nil-nil/grow/internal"
+	"github.com/nil-nil/ticket/api"
+	"github.com/nil-nil/ticket/internal"
 )
 
 func main() {

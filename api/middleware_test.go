@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
-	"github.com/nil-nil/grow/api"
+	"github.com/nil-nil/ticket/api"
 
 	"github.com/stretchr/testify/assert"
 )

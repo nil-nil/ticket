@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/nil-nil/grow/internal"
+	"github.com/nil-nil/ticket/internal"
 	"github.com/stretchr/testify/assert"
 )
 

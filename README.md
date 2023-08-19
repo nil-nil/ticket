@@ -1,7 +1,9 @@
+![tests](https://github.com/nil-nil/ticket/actions/workflows/go-test.yml/badge.svg)
+
 <div align="center">
-  <h3 align="center">Grow</h3>
+  <h3 align="center">Ticket</h3>
   <p align="center">
-    Something for something...
+    A Ticket system.
   </p>
 </div
 

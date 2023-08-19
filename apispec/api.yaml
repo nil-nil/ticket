@@ -1,8 +1,8 @@
 openapi: 3.0.2
 info:
-  title: Grow
+  title: Ticket
   version: 1.0.0
-  description: Tom's management app
+  description: A Ticket system
   contact:
     name: Tom Salmon
     email: tom@tomsalmon.net

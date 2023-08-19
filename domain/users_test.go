@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nil-nil/grow/domain"
+	"github.com/nil-nil/ticket/domain"
 	"github.com/stretchr/testify/assert"
 )
 
