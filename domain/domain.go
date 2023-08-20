@@ -10,19 +10,33 @@ type UserRepository interface {
 	Create(FirstName string, LastName string) (User, error)
 }
 
+type TicketRepository interface {
+	Find(ID uint64) (Ticket, error)
+	Open(Description string) (Ticket, error)
+	Update(ID uint64, Params TicketUpdateParameters) (Ticket, error)
+}
+
+type TicketUpdateParameters struct {
+	Status      TicketStatus
+	OwnerID     *uint64
+	Description *string
+}
+
 type repository struct {
-	users UserRepository
+	users   UserRepository
+	tickets TicketRepository
 }
 
 var (
 	repo                       repository
 	ErrUninitializedRepository = errors.New("repository has not been initialized")
-	ErrUserNotFound            = errors.New("user not found")
+	ErrNotFound                = errors.New("not found")
 )
 
-func InitRepo(userRepository UserRepository) {
+func InitRepo(userRepository UserRepository, ticketRepository TicketRepository) {
 	repo = repository{
-		users: userRepository,
+		users:   userRepository,
+		tickets: ticketRepository,
 	}
 }
 
@@ -114,4 +128,25 @@ func (t *Ticket) Meta() TicketMeta {
 		}
 	}
 	return meta
+}
+
+func GetTicket(ID uint64) (Ticket, error) {
+	if repo.tickets == nil {
+		return Ticket{}, ErrUninitializedRepository
+	}
+	return repo.tickets.Find(ID)
+}
+
+func OpenTicket(Description string) (Ticket, error) {
+	if repo.tickets == nil {
+		return Ticket{}, ErrUninitializedRepository
+	}
+	return repo.tickets.Open(Description)
+}
+
+func UpdateTicket(ID uint64, Params TicketUpdateParameters) (Ticket, error) {
+	if repo.tickets == nil {
+		return Ticket{}, ErrUninitializedRepository
+	}
+	return repo.tickets.Update(ID, Params)
 }

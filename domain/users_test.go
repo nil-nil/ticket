@@ -15,7 +15,7 @@ type mockUserRepository struct {
 func (r *mockUserRepository) Find(ID uint64) (domain.User, error) {
 	user, ok := r.users[ID]
 	if !ok {
-		return domain.User{}, domain.ErrUserNotFound
+		return domain.User{}, domain.ErrNotFound
 	}
 	return user, nil
 }
@@ -28,7 +28,7 @@ func (r *mockUserRepository) Create(FirstName string, LastName string) (domain.U
 		}
 	}
 
-	userID := lastKey + 1
+	userID := nextKey(r.users)
 	r.users[userID] = domain.User{
 		ID:        userID,
 		FirstName: FirstName,
@@ -39,7 +39,7 @@ func (r *mockUserRepository) Create(FirstName string, LastName string) (domain.U
 }
 
 func TestFindUser(t *testing.T) {
-	domain.InitRepo(nil)
+	domain.InitRepo(nil, nil)
 	repo := mockUserRepository{
 		users: map[uint64]domain.User{
 			1: {ID: 1, FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
@@ -52,7 +52,7 @@ func TestFindUser(t *testing.T) {
 		assert.Equal(t, domain.User{}, u)
 	})
 
-	domain.InitRepo(&repo)
+	domain.InitRepo(&repo, nil)
 
 	t.Run("get a valid user", func(t *testing.T) {
 		u, err := domain.GetUser(1)
@@ -62,13 +62,13 @@ func TestFindUser(t *testing.T) {
 
 	t.Run("get an invalid user", func(t *testing.T) {
 		u, err := domain.GetUser(100)
-		assert.EqualError(t, err, domain.ErrUserNotFound.Error())
+		assert.EqualError(t, err, domain.ErrNotFound.Error())
 		assert.Equal(t, domain.User{}, u)
 	})
 }
 
 func TestGetUser(t *testing.T) {
-	domain.InitRepo(nil)
+	domain.InitRepo(nil, nil)
 	repo := mockUserRepository{
 		users: map[uint64]domain.User{
 			1: {ID: 1, FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
@@ -81,7 +81,7 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, domain.User{}, u)
 	})
 
-	domain.InitRepo(&repo)
+	domain.InitRepo(&repo, nil)
 
 	t.Run("create a valid user", func(t *testing.T) {
 		first := "Barry"
