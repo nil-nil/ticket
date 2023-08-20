@@ -27,9 +27,9 @@ func TestNextKeyFunc(t *testing.T) {
 
 	t.Run("test first key", func(t *testing.T) {
 		testMap := map[uint64]struct{}{
-			10: struct{}{},
-			50: struct{}{},
-			51: struct{}{},
+			10: {},
+			50: {},
+			51: {},
 		}
 		k := nextKey(testMap)
 		assert.Equal(t, uint64(52), k, "test next key with gaps")
