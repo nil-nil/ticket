@@ -1,4 +1,4 @@
-![tests](https://github.com/nil-nil/ticket/actions/workflows/go-test.yml/badge.svg)
+![tests](https://github.com/nil-nil/ticket/actions/workflows/go-test.yml/badge.svg?branch=dev)
 
 <div align="center">
   <h3 align="center">Ticket</h3>
