@@ -8,6 +8,7 @@ require (
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/stretchr/testify v1.8.3
 	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 )
 
 require (
