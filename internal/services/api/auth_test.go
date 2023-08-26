@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nil-nil/ticket/api"
+	"github.com/nil-nil/ticket/internal/services/api"
 	"github.com/stretchr/testify/assert"
 )
 

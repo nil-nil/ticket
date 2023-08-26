@@ -1,15 +1,15 @@
-package internal_test
+package config_test
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/nil-nil/ticket/internal"
+	"github.com/nil-nil/ticket/internal/services/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestYamlConfig(t *testing.T) {
-	structConfig := internal.Config{
+	structConfig := config.Config{
 		HTTP: struct {
 			Port          int    `yaml:"port"`
 			ListenAddress string `yaml:"listenAddress"`
@@ -57,7 +57,7 @@ auth:
 
 	b := bytes.NewBufferString(yamlConfig)
 
-	config, err := internal.GetConfig(b)
+	config, err := config.GetConfig(b)
 
 	assert.NoError(t, err)
 	assert.Equal(t, structConfig, config)

@@ -12,15 +12,15 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/nil-nil/ticket/api"
-	"github.com/nil-nil/ticket/internal"
+	"github.com/nil-nil/ticket/internal/services/api"
+	"github.com/nil-nil/ticket/internal/services/config"
 )
 
 func main() {
 	configFilePath := flag.String("config", "config.yaml", "Configuration file")
 	flag.Parse()
 
-	config, err := internal.ReadAndParseConfigFile(*configFilePath)
+	config, err := config.ReadAndParseConfigFile(*configFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
