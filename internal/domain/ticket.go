@@ -1,14 +1,6 @@
 package domain
 
-import (
-	"errors"
-	"time"
-)
-
-type UserRepository interface {
-	Find(ID uint64) (User, error)
-	Create(FirstName string, LastName string) (User, error)
-}
+import "time"
 
 type TicketRepository interface {
 	Find(ID uint64) (Ticket, error)
@@ -20,48 +12,6 @@ type TicketUpdateParameters struct {
 	Status      TicketStatus
 	OwnerID     *uint64
 	Description *string
-}
-
-type repository struct {
-	users   UserRepository
-	tickets TicketRepository
-}
-
-var (
-	repo                       repository
-	ErrUninitializedRepository = errors.New("repository has not been initialized")
-	ErrNotFound                = errors.New("not found")
-)
-
-func InitRepo(userRepository UserRepository, ticketRepository TicketRepository) {
-	repo = repository{
-		users:   userRepository,
-		tickets: ticketRepository,
-	}
-}
-
-type User struct {
-	ID        uint64
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
-
-	FirstName string
-	LastName  string
-}
-
-func GetUser(ID uint64) (User, error) {
-	if repo.users == nil {
-		return User{}, ErrUninitializedRepository
-	}
-	return repo.users.Find(ID)
-}
-
-func CreateUser(FirstName string, LastName string) (User, error) {
-	if repo.users == nil {
-		return User{}, ErrUninitializedRepository
-	}
-	return repo.users.Create(FirstName, LastName)
 }
 
 type TicketStatus int
@@ -130,23 +80,24 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func GetTicket(ID uint64) (Ticket, error) {
-	if repo.tickets == nil {
-		return Ticket{}, ErrUninitializedRepository
+func NewTicketService(repo TicketRepository) *TicketService {
+	return &TicketService{
+		repo: repo,
 	}
-	return repo.tickets.Find(ID)
 }
 
-func OpenTicket(Description string) (Ticket, error) {
-	if repo.tickets == nil {
-		return Ticket{}, ErrUninitializedRepository
-	}
-	return repo.tickets.Open(Description)
+type TicketService struct {
+	repo TicketRepository
 }
 
-func UpdateTicket(ID uint64, Params TicketUpdateParameters) (Ticket, error) {
-	if repo.tickets == nil {
-		return Ticket{}, ErrUninitializedRepository
-	}
-	return repo.tickets.Update(ID, Params)
+func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
+	return s.repo.Find(ID)
+}
+
+func (s *TicketService) OpenTicket(Description string) (Ticket, error) {
+	return s.repo.Open(Description)
+}
+
+func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (Ticket, error) {
+	return s.repo.Update(ID, Params)
 }

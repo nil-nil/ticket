@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nil-nil/ticket/domain"
+	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
@@ -110,36 +110,22 @@ var repo = mockTicketRepo{
 	},
 }
 
-func TestUninitializedRepo(t *testing.T) {
-	ticket, err := domain.GetTicket(10)
-	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
-	assert.EqualError(t, domain.ErrUninitializedRepository, err.Error(), "expected uninitialized repo warning")
-
-	ticket, err = domain.OpenTicket("")
-	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
-	assert.EqualError(t, domain.ErrUninitializedRepository, err.Error(), "expected uninitialized repo warning")
-
-	ticket, err = domain.UpdateTicket(10, domain.TicketUpdateParameters{})
-	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
-	assert.EqualError(t, domain.ErrUninitializedRepository, err.Error(), "expected uninitialized repo warning")
-}
-
 func TestGetTicket(t *testing.T) {
-	domain.InitRepo(nil, &repo)
+	svc := domain.NewTicketService(&repo)
 
-	ticket, err := domain.GetTicket(10)
+	ticket, err := svc.GetTicket(10)
 	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
 	assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
 
-	ticket, err = domain.GetTicket(3)
+	ticket, err = svc.GetTicket(3)
 	assert.Equal(t, domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, ticket, "ticket should not be empty")
 	assert.NoError(t, err, "error should be nil")
 }
 
 func TestOpenTicket(t *testing.T) {
-	domain.InitRepo(nil, &repo)
+	svc := domain.NewTicketService(&repo)
 
-	ticket, err := domain.OpenTicket("test")
+	ticket, err := svc.OpenTicket("test")
 	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
 	assert.NoError(t, err, "error should be nil")
 
@@ -150,9 +136,9 @@ func TestOpenTicket(t *testing.T) {
 }
 
 func TestUpdateTicket(t *testing.T) {
-	domain.InitRepo(nil, &repo)
+	svc := domain.NewTicketService(&repo)
 
-	ticket, err := domain.UpdateTicket(3, domain.TicketUpdateParameters{
+	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
 		Description: ptr.To("Expected New Description"),
 		Status:      domain.TicketStatusBlocked,
 		OwnerID:     ptr.To(uint64(99)),
