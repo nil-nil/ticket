@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/nil-nil/ticket/domain"
+	"github.com/nil-nil/ticket/internal/domain"
 )
 
 var (
