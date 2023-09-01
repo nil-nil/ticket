@@ -2,6 +2,7 @@ package mail
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/nil-nil/ticket/internal/domain"
 )
@@ -9,6 +10,7 @@ import (
 var (
 	ErrBlockedSender       = errors.New("sender is blocked")
 	ErrInvalidEmailAddress = errors.New("invalid email address")
+	ErrAliasNotFound       = errors.New("alias is not found")
 )
 
 type MailServerRepository interface {
@@ -40,13 +42,29 @@ func (s *Server) ValidateSenderAddress(address string) error {
 }
 
 func (s *Server) ValidateRecipientAddress(address string) error {
+	user, mailDomain, err := getUserAndDomainParts(address)
+	if err != nil {
+		return ErrInvalidEmailAddress
+	}
+
+	if authoritative := s.repository.IsAuthoritative(mailDomain); !authoritative {
+		return nil
+	}
+
+	_, err = s.aliases.Find(domain.FindAliasParameters{User: &user, Domain: &mailDomain})
+	if errors.Is(err, domain.ErrNotFound) {
+		return ErrAliasNotFound
+	} else if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// func getUserAndDomainParts(address string) (user, domain string, err error) {
-// 	parts := strings.Split(address, "@")
-// 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-// 		return user, domain, ErrInvalidEmailAddress
-// 	}
-// 	return parts[0], parts[1], nil
-// }
+func getUserAndDomainParts(address string) (user, domain string, err error) {
+	parts := strings.Split(address, "@")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return user, domain, ErrInvalidEmailAddress
+	}
+	return parts[0], parts[1], nil
+}
