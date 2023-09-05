@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	mailgosmtp "github.com/nil-nil/ticket/internal/infrastructure/mail-go-smtp"
+	"github.com/nil-nil/ticket/internal/infrastructure/gosmtpmail"
 	"github.com/nil-nil/ticket/internal/services/config"
 )
 
@@ -21,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := mailgosmtp.NewServer()
+	server := gosmtpmail.NewServer()
 
 	// Shutdown the app on signal
 	ctx := context.Background()

@@ -1,4 +1,4 @@
-package mailgosmtp
+package gosmtpmail
 
 import (
 	"io"
