@@ -8,7 +8,7 @@ type UserRepository interface {
 }
 
 type User struct {
-	ID        uint64
+	ID        uint64 `eventbus:"id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time

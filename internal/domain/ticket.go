@@ -39,7 +39,7 @@ func (t TicketStatus) String() string {
 }
 
 type Ticket struct {
-	ID          uint64
+	ID          uint64 `eventbus:"id"`
 	Transitions []TicketTransition
 }
 
