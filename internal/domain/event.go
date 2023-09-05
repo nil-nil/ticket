@@ -20,3 +20,15 @@ func (e EventType) String() string {
 	}
 	return "unknown"
 }
+
+func ParseEventString(s string) EventType {
+	switch s {
+	case "create":
+		return CreateEvent
+	case "update":
+		return UpdateEvent
+	case "delete":
+		return DeleteEvent
+	}
+	return UnknownEvent
+}
