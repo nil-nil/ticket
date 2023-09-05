@@ -41,7 +41,7 @@ func (e *EventBus) Publish(subject interface{}, eventType domain.EventType) erro
 	}
 
 	idValue := reflect.ValueOf(subject).FieldByIndex(idField.Index).Interface()
-	eventKey := fmt.Sprintf("%s:%v", subjectType, idValue)
+	eventKey := fmt.Sprintf("%s:%v:%s", subjectType, idValue, eventType)
 
 	err := e.driver.Publish(eventKey)
 	if err != nil {

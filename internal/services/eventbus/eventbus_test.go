@@ -46,6 +46,6 @@ func TestPublishing(t *testing.T) {
 		u := domain.User{ID: 1}
 		err := eventBus.Publish(u, domain.CreateEvent)
 		assert.NoError(t, err, "valid struct shouldn't error")
-		assert.Equal(t, *m.Event, "domain.User:1", "expected event matching subject")
+		assert.Equal(t, *m.Event, "domain.User:1:create", "expected event matching subject")
 	})
 }
