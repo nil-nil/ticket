@@ -48,7 +48,7 @@ func TestTicketMeta(t *testing.T) {
 
 func TestGetTicket(t *testing.T) {
 	eventDrv.Reset()
-	svc := domain.NewTicketService(&repo, mockEventBus)
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.GetTicket(10)
 	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
@@ -61,7 +61,7 @@ func TestGetTicket(t *testing.T) {
 
 func TestOpenTicket(t *testing.T) {
 	eventDrv.Reset()
-	svc := domain.NewTicketService(&repo, mockEventBus)
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.OpenTicket("test")
 	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
@@ -75,7 +75,7 @@ func TestOpenTicket(t *testing.T) {
 }
 
 func TestUpdateTicket(t *testing.T) {
-	svc := domain.NewTicketService(&repo, mockEventBus)
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
 		Description: ptr.To("Expected New Description"),

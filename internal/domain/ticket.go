@@ -80,16 +80,18 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func NewTicketService(repo TicketRepository, eventBus EventBus) *TicketService {
+func NewTicketService(repo TicketRepository, eventBus EventBus, cache CacheDriver) *TicketService {
 	return &TicketService{
 		repo:     repo,
 		eventBus: eventBus,
+		cache:    cache,
 	}
 }
 
 type TicketService struct {
 	repo     TicketRepository
 	eventBus EventBus
+	cache    CacheDriver
 }
 
 func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {

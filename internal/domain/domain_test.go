@@ -3,6 +3,7 @@ package domain_test
 import (
 	"testing"
 
+	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,3 +63,29 @@ func (m *mockEventBusDriver) Reset() {
 
 var eventDrv = mockEventBusDriver{}
 var mockEventBus = eventbus.NewEventBus(&eventDrv)
+
+type mockCacheDriver struct {
+	cache map[string]interface{}
+}
+
+func (m *mockCacheDriver) Get(key string) (interface{}, error) {
+	val, ok := m.cache[key]
+	if !ok {
+		return nil, domain.ErrNotFoundInCache
+	}
+	return val, nil
+}
+
+func (m *mockCacheDriver) Set(key string, value interface{}) error {
+	m.cache[key] = value
+	return nil
+}
+
+func (m *mockCacheDriver) Forget(key string) error {
+	delete(m.cache, key)
+	return nil
+}
+
+var mockCache = &mockCacheDriver{
+	cache: make(map[string]interface{}, 0),
+}
