@@ -17,14 +17,16 @@ type User struct {
 	LastName  string
 }
 
-func NewUserService(repo UserRepository) *UserService {
+func NewUserService(repo UserRepository, eventBus EventBus) *UserService {
 	return &UserService{
-		repo: repo,
+		repo:     repo,
+		eventBus: eventBus,
 	}
 }
 
 type UserService struct {
-	repo UserRepository
+	repo     UserRepository
+	eventBus EventBus
 }
 
 func (s *UserService) GetUser(ID uint64) (User, error) {
@@ -32,5 +34,15 @@ func (s *UserService) GetUser(ID uint64) (User, error) {
 }
 
 func (s *UserService) CreateUser(FirstName string, LastName string) (User, error) {
-	return s.repo.Create(FirstName, LastName)
+	u, err := s.repo.Create(FirstName, LastName)
+	if err != nil {
+		return User{}, err
+	}
+
+	err = s.eventBus.Publish(u, CreateEvent)
+	if err != nil {
+		return User{}, err
+	}
+
+	return u, nil
 }
