@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
-	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
@@ -48,6 +47,7 @@ func TestTicketMeta(t *testing.T) {
 }
 
 func TestGetTicket(t *testing.T) {
+	eventDrv.Reset()
 	svc := domain.NewTicketService(&repo, mockEventBus)
 
 	ticket, err := svc.GetTicket(10)
@@ -60,11 +60,13 @@ func TestGetTicket(t *testing.T) {
 }
 
 func TestOpenTicket(t *testing.T) {
+	eventDrv.Reset()
 	svc := domain.NewTicketService(&repo, mockEventBus)
 
 	ticket, err := svc.OpenTicket("test")
 	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
 	assert.NoError(t, err, "error should be nil")
+	assert.Equal(t, *eventDrv.Event, "domain.Ticket:4:create", "expected event matching subject")
 
 	meta := ticket.Meta()
 	assert.Equal(t, domain.TicketStatusOpen, meta.Status, "ticket status should be open")
@@ -82,6 +84,7 @@ func TestUpdateTicket(t *testing.T) {
 	})
 	assert.Equal(t, uint64(3), ticket.ID, "ticket should have same ID")
 	assert.NoError(t, err, "error should be nil")
+	assert.Equal(t, *eventDrv.Event, "domain.Ticket:3:update", "expected event matching subject")
 
 	meta := ticket.Meta()
 	assert.Equal(t, domain.TicketStatusBlocked, meta.Status, "ticket status should have status provided")
@@ -153,29 +156,3 @@ var repo = mockTicketRepo{
 		},
 	},
 }
-
-type mockEventBusDriver struct {
-	Event                *string
-	SubscriptionKey      *string
-	SubscriptionCallback *func(subject string)
-}
-
-func (m *mockEventBusDriver) Publish(subject string) error {
-	m.Event = &subject
-	return nil
-}
-
-func (m *mockEventBusDriver) Subscribe(subject string, callback func(subject string)) error {
-	m.SubscriptionKey = &subject
-	m.SubscriptionCallback = &callback
-	return nil
-}
-
-func (m *mockEventBusDriver) Reset() {
-	m.Event = nil
-	m.SubscriptionKey = nil
-	m.SubscriptionCallback = nil
-}
-
-var eventDrv = mockEventBusDriver{}
-var mockEventBus = eventbus.NewEventBus(&eventDrv)
