@@ -10,7 +10,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	ristrettoCache, err := ristrettocache.NewCache(nil)
+	ristrettoCache, err := ristrettocache.NewCache(&ristrettocache.CacheConfig{Size: 8 * 512, ExpectedNumberOfItems: 1})
 	assert.NoError(t, err, "creating ristretto cache shouldn't error")
 
 	t.Run("not found error", func(t *testing.T) {
