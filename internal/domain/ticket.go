@@ -39,7 +39,7 @@ func (t TicketStatus) String() string {
 }
 
 type Ticket struct {
-	ID          uint64
+	ID          uint64 `eventbus:"id"`
 	Transitions []TicketTransition
 }
 
@@ -80,14 +80,16 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func NewTicketService(repo TicketRepository) *TicketService {
+func NewTicketService(repo TicketRepository, eventBus EventBus) *TicketService {
 	return &TicketService{
-		repo: repo,
+		repo:     repo,
+		eventBus: eventBus,
 	}
 }
 
 type TicketService struct {
-	repo TicketRepository
+	repo     TicketRepository
+	eventBus EventBus
 }
 
 func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
@@ -95,9 +97,27 @@ func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
 }
 
 func (s *TicketService) OpenTicket(Description string) (Ticket, error) {
-	return s.repo.Open(Description)
+	ticket, err := s.repo.Open(Description)
+	if err != nil {
+		return Ticket{}, err
+	}
+
+	err = s.eventBus.Publish(ticket, CreateEvent)
+	if err != nil {
+		return Ticket{}, err
+	}
+	return ticket, nil
 }
 
 func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (Ticket, error) {
-	return s.repo.Update(ID, Params)
+	ticket, err := s.repo.Update(ID, Params)
+	if err != nil {
+		return Ticket{}, err
+	}
+
+	err = s.eventBus.Publish(ticket, UpdateEvent)
+	if err != nil {
+		return Ticket{}, err
+	}
+	return ticket, nil
 }

@@ -3,6 +3,7 @@ package domain_test
 import (
 	"testing"
 
+	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,3 +36,29 @@ func TestNextKeyFunc(t *testing.T) {
 		assert.Equal(t, uint64(52), k, "test next key with gaps")
 	})
 }
+
+type mockEventBusDriver struct {
+	Event                *string
+	SubscriptionKey      *string
+	SubscriptionCallback *func(subject string)
+}
+
+func (m *mockEventBusDriver) Publish(subject string) error {
+	m.Event = &subject
+	return nil
+}
+
+func (m *mockEventBusDriver) Subscribe(subject string, callback func(subject string)) error {
+	m.SubscriptionKey = &subject
+	m.SubscriptionCallback = &callback
+	return nil
+}
+
+func (m *mockEventBusDriver) Reset() {
+	m.Event = nil
+	m.SubscriptionKey = nil
+	m.SubscriptionCallback = nil
+}
+
+var eventDrv = mockEventBusDriver{}
+var mockEventBus = eventbus.NewEventBus(&eventDrv)

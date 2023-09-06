@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -38,14 +39,14 @@ func (r *mockUserRepository) Create(FirstName string, LastName string) (domain.U
 	return r.users[userID], nil
 }
 
-func TestFindUser(t *testing.T) {
+func TestGetUser(t *testing.T) {
 	repo := mockUserRepository{
 		users: map[uint64]domain.User{
 			1: {ID: 1, FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
 
-	svc := domain.NewUserService(&repo)
+	svc := domain.NewUserService(&repo, mockEventBus)
 
 	t.Run("get a valid user", func(t *testing.T) {
 		u, err := svc.GetUser(1)
@@ -60,14 +61,14 @@ func TestFindUser(t *testing.T) {
 	})
 }
 
-func TestGetUser(t *testing.T) {
+func TestCreateUser(t *testing.T) {
 	repo := mockUserRepository{
 		users: map[uint64]domain.User{
 			1: {ID: 1, FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
 
-	svc := domain.NewUserService(&repo)
+	svc := domain.NewUserService(&repo, mockEventBus)
 
 	t.Run("create a valid user", func(t *testing.T) {
 		first := "Barry"
@@ -77,5 +78,6 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, u.FirstName, first)
 		assert.Equal(t, u.LastName, last)
 		assert.Equal(t, u, repo.users[u.ID])
+		assert.Equal(t, *eventDrv.Event, fmt.Sprintf("domain.User:%d:create", u.ID), "expected event matching subject")
 	})
 }

@@ -46,6 +46,53 @@ func TestTicketMeta(t *testing.T) {
 	assert.Equal(t, "Test 2", meta.Description, "Wrong Description")
 }
 
+func TestGetTicket(t *testing.T) {
+	eventDrv.Reset()
+	svc := domain.NewTicketService(&repo, mockEventBus)
+
+	ticket, err := svc.GetTicket(10)
+	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
+	assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
+
+	ticket, err = svc.GetTicket(3)
+	assert.Equal(t, domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, ticket, "ticket should not be empty")
+	assert.NoError(t, err, "error should be nil")
+}
+
+func TestOpenTicket(t *testing.T) {
+	eventDrv.Reset()
+	svc := domain.NewTicketService(&repo, mockEventBus)
+
+	ticket, err := svc.OpenTicket("test")
+	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
+	assert.NoError(t, err, "error should be nil")
+	assert.Equal(t, *eventDrv.Event, "domain.Ticket:4:create", "expected event matching subject")
+
+	meta := ticket.Meta()
+	assert.Equal(t, domain.TicketStatusOpen, meta.Status, "ticket status should be open")
+	assert.Equal(t, "test", meta.Description, "ticket should have description provided")
+	assert.Nil(t, meta.OwnerID, "ticket owner id should be nil")
+}
+
+func TestUpdateTicket(t *testing.T) {
+	svc := domain.NewTicketService(&repo, mockEventBus)
+
+	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
+		Description: ptr.To("Expected New Description"),
+		Status:      domain.TicketStatusBlocked,
+		OwnerID:     ptr.To(uint64(99)),
+	})
+	assert.Equal(t, uint64(3), ticket.ID, "ticket should have same ID")
+	assert.NoError(t, err, "error should be nil")
+	assert.Equal(t, *eventDrv.Event, "domain.Ticket:3:update", "expected event matching subject")
+
+	meta := ticket.Meta()
+	assert.Equal(t, domain.TicketStatusBlocked, meta.Status, "ticket status should have status provided")
+	assert.Equal(t, "Expected New Description", meta.Description, "ticket should have description provided")
+	assert.NotNil(t, meta.OwnerID, "ticket owner id should no longer be nil")
+	assert.Equal(t, uint64(99), *meta.OwnerID, "ticket should have owner id provided")
+}
+
 type mockTicketRepo struct {
 	transitions map[uint64][]domain.TicketTransition
 }
@@ -108,47 +155,4 @@ var repo = mockTicketRepo{
 			},
 		},
 	},
-}
-
-func TestGetTicket(t *testing.T) {
-	svc := domain.NewTicketService(&repo)
-
-	ticket, err := svc.GetTicket(10)
-	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
-	assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
-
-	ticket, err = svc.GetTicket(3)
-	assert.Equal(t, domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, ticket, "ticket should not be empty")
-	assert.NoError(t, err, "error should be nil")
-}
-
-func TestOpenTicket(t *testing.T) {
-	svc := domain.NewTicketService(&repo)
-
-	ticket, err := svc.OpenTicket("test")
-	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
-	assert.NoError(t, err, "error should be nil")
-
-	meta := ticket.Meta()
-	assert.Equal(t, domain.TicketStatusOpen, meta.Status, "ticket status should be open")
-	assert.Equal(t, "test", meta.Description, "ticket should have description provided")
-	assert.Nil(t, meta.OwnerID, "ticket owner id should be nil")
-}
-
-func TestUpdateTicket(t *testing.T) {
-	svc := domain.NewTicketService(&repo)
-
-	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
-		Description: ptr.To("Expected New Description"),
-		Status:      domain.TicketStatusBlocked,
-		OwnerID:     ptr.To(uint64(99)),
-	})
-	assert.Equal(t, uint64(3), ticket.ID, "ticket should have same ID")
-	assert.NoError(t, err, "error should be nil")
-
-	meta := ticket.Meta()
-	assert.Equal(t, domain.TicketStatusBlocked, meta.Status, "ticket status should have status provided")
-	assert.Equal(t, "Expected New Description", meta.Description, "ticket should have description provided")
-	assert.NotNil(t, meta.OwnerID, "ticket owner id should no longer be nil")
-	assert.Equal(t, uint64(99), *meta.OwnerID, "ticket should have owner id provided")
 }
