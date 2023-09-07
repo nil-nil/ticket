@@ -91,7 +91,7 @@ func NewTicketService(repo TicketRepository, eventBus EventBus, cache CacheDrive
 		cache:    cache,
 	}
 
-	eventBus.Subscribe(Ticket{}, true, []EventType{CreateEvent, UpdateEvent, DeleteEvent}, svc.observeTicketEvents)
+	eventBus.Subscribe(Ticket{}, true, []EventType{CreateEvent, UpdateEvent, DeleteEvent}, svc.ObserveTicketEvent)
 
 	return svc
 }
@@ -140,7 +140,7 @@ func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (
 	return ticket, nil
 }
 
-func (s *TicketService) observeTicketEvents(subjectType string, subjectId string, eventType EventType) {
+func (s *TicketService) ObserveTicketEvent(subjectType string, subjectId string, eventType EventType) {
 	if subjectType != "domain.Ticket" {
 		return
 	}

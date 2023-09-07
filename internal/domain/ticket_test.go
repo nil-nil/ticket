@@ -93,6 +93,16 @@ func TestUpdateTicket(t *testing.T) {
 	assert.Equal(t, uint64(99), *meta.OwnerID, "ticket should have owner id provided")
 }
 
+func TestTicketObserver(t *testing.T) {
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
+
+	mockCache.cache["domain.NotExist.1"] = "value"
+
+	svc.ObserveTicketEvent("domain.NotExist", "1", domain.UpdateEvent)
+
+	assert.Equal(t, mockCache.cache["domain.NotExist.1"], "value", "observer shouldn't mess with non-owned model")
+}
+
 type mockTicketRepo struct {
 	transitions map[uint64][]domain.TicketTransition
 }
