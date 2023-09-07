@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"strconv"
+	"time"
+)
 
 type TicketRepository interface {
 	Find(ID uint64) (Ticket, error)
@@ -81,11 +85,15 @@ func (t *Ticket) Meta() TicketMeta {
 }
 
 func NewTicketService(repo TicketRepository, eventBus EventBus, cache CacheDriver) *TicketService {
-	return &TicketService{
+	svc := &TicketService{
 		repo:     repo,
 		eventBus: eventBus,
 		cache:    cache,
 	}
+
+	eventBus.Subscribe(Ticket{}, true, []EventType{CreateEvent, UpdateEvent, DeleteEvent}, svc.observeTicketEvents)
+
+	return svc
 }
 
 type TicketService struct {
@@ -95,6 +103,14 @@ type TicketService struct {
 }
 
 func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
+	hit, err := s.cache.Get(fmt.Sprintf("tickets.%d", ID))
+	if err == nil {
+		ticket, ok := hit.(Ticket)
+		if ok {
+			return ticket, nil
+		}
+	}
+
 	return s.repo.Find(ID)
 }
 
@@ -122,4 +138,23 @@ func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (
 		return Ticket{}, err
 	}
 	return ticket, nil
+}
+
+func (s *TicketService) observeTicketEvents(subjectType string, subjectId string, eventType EventType) {
+	if subjectType != "domain.Ticket" {
+		return
+	}
+
+	id, err := strconv.ParseUint(subjectId, 10, 64)
+	if err != nil {
+		return
+	}
+
+	ticket, err := s.repo.Find(id)
+	if err != nil {
+		s.cache.Forget(fmt.Sprintf("tickets.%d", id))
+		return
+	}
+
+	s.cache.Set(fmt.Sprintf("tickets.%d", id), ticket)
 }
