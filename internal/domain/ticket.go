@@ -42,6 +42,8 @@ func (t TicketStatus) String() string {
 	return "Unset"
 }
 
+const ticketCachePrefix = "tickets"
+
 type Ticket struct {
 	ID          uint64 `eventbus:"id"`
 	Transitions []TicketTransition
@@ -103,7 +105,7 @@ type TicketService struct {
 }
 
 func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
-	hit, err := s.cache.Get(fmt.Sprintf("tickets.%d", ID))
+	hit, err := s.cache.Get(fmt.Sprintf("%s.%d", ticketCachePrefix, ID))
 	if err == nil {
 		ticket, ok := hit.(Ticket)
 		if ok {
@@ -152,9 +154,9 @@ func (s *TicketService) ObserveTicketEvent(subjectType string, subjectId string,
 
 	ticket, err := s.repo.Find(id)
 	if err != nil {
-		s.cache.Forget(fmt.Sprintf("tickets.%d", id))
+		s.cache.Forget(fmt.Sprintf("%s.%d", ticketCachePrefix, id))
 		return
 	}
 
-	s.cache.Set(fmt.Sprintf("tickets.%d", id), ticket)
+	s.cache.Set(fmt.Sprintf("%s.%d", ticketCachePrefix, id), ticket)
 }
