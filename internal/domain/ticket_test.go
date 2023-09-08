@@ -96,11 +96,23 @@ func TestUpdateTicket(t *testing.T) {
 func TestTicketObserver(t *testing.T) {
 	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
-	mockCache.cache["domain.NotExist.1"] = "value"
+	t.Run("cache entry ownership", func(t *testing.T) {
+		mockCache.cache["NotExist.1"] = "value"
+		svc.ObserveTicketEvent("NotExist", "1", domain.UpdateEvent)
+		assert.Equal(t, mockCache.cache["NotExist.1"], "value", "observer shouldn't mess with non-owned model")
+	})
 
-	svc.ObserveTicketEvent("domain.NotExist", "1", domain.UpdateEvent)
+	t.Run("invalid id", func(t *testing.T) {
+		mockCache.cache["tickets.x"] = "value"
+		svc.ObserveTicketEvent("domain.Ticket", "x", domain.DeleteEvent)
+		assert.Equal(t, mockCache.cache["tickets.x"], "value", "observer shouldn't mess with invalid model")
+	})
 
-	assert.Equal(t, mockCache.cache["domain.NotExist.1"], "value", "observer shouldn't mess with non-owned model")
+	t.Run("valid ticket", func(t *testing.T) {
+		mockCache.cache["tickets.3"] = "value"
+		svc.ObserveTicketEvent("domain.Ticket", "3", domain.DeleteEvent)
+		assert.Equal(t, mockCache.cache["tickets.3"], domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, "cached ticket should be set")
+	})
 }
 
 type mockTicketRepo struct {
