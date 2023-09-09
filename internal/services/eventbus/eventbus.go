@@ -14,18 +14,18 @@ var (
 	ErrNoIDField  = errors.New("subject has no field tagged as eventbus:\"id\"")
 )
 
-func NewEventBus(driver EventBusDriver) *EventBus {
-	return &EventBus{
+func NewEventBus[T any](driver EventBusDriver[T]) *EventBus[T] {
+	return &EventBus[T]{
 		driver: driver,
 	}
 }
 
-type EventBus struct {
-	driver EventBusDriver
+type EventBus[T any] struct {
+	driver EventBusDriver[T]
 }
 
-func (e *EventBus) Publish(subject interface{}, eventType domain.EventType) error {
-	subjectType := reflect.TypeOf(subject)
+func (e *EventBus[T]) Publish(data T, eventType domain.EventType) error {
+	subjectType := reflect.TypeOf(data)
 	if subjectType.Kind() != reflect.Struct {
 		return ErrNotAStruct
 	}
@@ -41,10 +41,10 @@ func (e *EventBus) Publish(subject interface{}, eventType domain.EventType) erro
 		return ErrNoIDField
 	}
 
-	idValue := reflect.ValueOf(subject).FieldByIndex(idField.Index).Interface()
+	idValue := reflect.ValueOf(data).FieldByIndex(idField.Index).Interface()
 	eventKey := fmt.Sprintf("%s:%v:%s", subjectType, idValue, eventType)
 
-	err := e.driver.Publish(eventKey)
+	err := e.driver.Publish(eventKey, data)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (e *EventBus) Publish(subject interface{}, eventType domain.EventType) erro
 	return nil
 }
 
-func (e *EventBus) Subscribe(subject interface{}, wildcardID bool, eventTypes []domain.EventType, callback func(subjectType string, subjectId string, eventType domain.EventType)) error {
+func (e *EventBus[T]) Subscribe(subject T, wildcardID bool, eventTypes []domain.EventType, callback func(subject T, eventType domain.EventType)) error {
 	subjectType := reflect.TypeOf(subject)
 	if subjectType.Kind() != reflect.Struct {
 		return ErrNotAStruct
@@ -78,14 +78,12 @@ func (e *EventBus) Subscribe(subject interface{}, wildcardID bool, eventTypes []
 	}
 
 	for _, eventType := range eventTypes {
-		eventKey := fmt.Sprintf("%s:%s:%s", subjectType, idString, eventType)
-		err := e.driver.Subscribe(eventKey, func(subject string) {
-			parts := strings.Split(subject, ":")
-			if len(parts) != 3 {
+		err := e.driver.Subscribe(fmt.Sprintf("%s:%s:%s", subjectType, idString, eventType), func(eventKey string, data T) {
+			keyParts := strings.Split(eventKey, ":")
+			if len(keyParts) != 3 {
 				return
 			}
-			eventType := domain.ParseEventString(parts[2])
-			callback(parts[0], parts[1], eventType)
+			callback(data, domain.ParseEventString(keyParts[2]))
 		})
 		if err != nil {
 			return err
@@ -95,7 +93,7 @@ func (e *EventBus) Subscribe(subject interface{}, wildcardID bool, eventTypes []
 	return nil
 }
 
-type EventBusDriver interface {
-	Publish(subject string) error
-	Subscribe(subject string, callback func(subject string)) error
+type EventBusDriver[T any] interface {
+	Publish(subject string, data T) error
+	Subscribe(subject string, callback func(eventKey string, data T)) error
 }

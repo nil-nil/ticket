@@ -2,7 +2,6 @@ package domain
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -86,7 +85,7 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func NewTicketService(repo TicketRepository, eventBus EventBus, cache CacheDriver) *TicketService {
+func NewTicketService(repo TicketRepository, eventBus TicketEventBus, cache CacheDriver) *TicketService {
 	svc := &TicketService{
 		repo:     repo,
 		eventBus: eventBus,
@@ -98,9 +97,14 @@ func NewTicketService(repo TicketRepository, eventBus EventBus, cache CacheDrive
 	return svc
 }
 
+type TicketEventBus interface {
+	Publish(data Ticket, eventType EventType) error
+	Subscribe(subject Ticket, wildcardID bool, eventTypes []EventType, callback func(data Ticket, eventType EventType)) error
+}
+
 type TicketService struct {
 	repo     TicketRepository
-	eventBus EventBus
+	eventBus TicketEventBus
 	cache    CacheDriver
 }
 
@@ -142,21 +146,12 @@ func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (
 	return ticket, nil
 }
 
-func (s *TicketService) ObserveTicketEvent(subjectType string, subjectId string, eventType EventType) {
-	if subjectType != "domain.Ticket" {
-		return
-	}
-
-	id, err := strconv.ParseUint(subjectId, 10, 64)
+func (s *TicketService) ObserveTicketEvent(data Ticket, eventType EventType) {
+	ticket, err := s.repo.Find(data.ID)
 	if err != nil {
+		s.cache.Forget(fmt.Sprintf("%s.%d", ticketCachePrefix, data.ID))
 		return
 	}
 
-	ticket, err := s.repo.Find(id)
-	if err != nil {
-		s.cache.Forget(fmt.Sprintf("%s.%d", ticketCachePrefix, id))
-		return
-	}
-
-	s.cache.Set(fmt.Sprintf("%s.%d", ticketCachePrefix, id), ticket)
+	s.cache.Set(fmt.Sprintf("%s.%d", ticketCachePrefix, ticket.ID), ticket)
 }

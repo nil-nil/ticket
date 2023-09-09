@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
+	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
@@ -47,7 +48,9 @@ func TestTicketMeta(t *testing.T) {
 }
 
 func TestGetTicket(t *testing.T) {
-	eventDrv.Reset()
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
 	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.GetTicket(10)
@@ -60,7 +63,9 @@ func TestGetTicket(t *testing.T) {
 }
 
 func TestOpenTicket(t *testing.T) {
-	eventDrv.Reset()
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
 	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.OpenTicket("test")
@@ -75,6 +80,9 @@ func TestOpenTicket(t *testing.T) {
 }
 
 func TestUpdateTicket(t *testing.T) {
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
 	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
@@ -94,23 +102,14 @@ func TestUpdateTicket(t *testing.T) {
 }
 
 func TestTicketObserver(t *testing.T) {
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
 	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
-
-	t.Run("cache entry ownership", func(t *testing.T) {
-		mockCache.cache["NotExist.1"] = "value"
-		svc.ObserveTicketEvent("NotExist", "1", domain.UpdateEvent)
-		assert.Equal(t, mockCache.cache["NotExist.1"], "value", "observer shouldn't mess with non-owned model")
-	})
-
-	t.Run("invalid id", func(t *testing.T) {
-		mockCache.cache["tickets.x"] = "value"
-		svc.ObserveTicketEvent("domain.Ticket", "x", domain.DeleteEvent)
-		assert.Equal(t, mockCache.cache["tickets.x"], "value", "observer shouldn't mess with invalid model")
-	})
 
 	t.Run("valid ticket", func(t *testing.T) {
 		mockCache.cache["tickets.3"] = "value"
-		svc.ObserveTicketEvent("domain.Ticket", "3", domain.DeleteEvent)
+		svc.ObserveTicketEvent(domain.Ticket{ID: 3}, domain.DeleteEvent)
 		assert.Equal(t, mockCache.cache["tickets.3"], domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, "cached ticket should be set")
 	})
 }

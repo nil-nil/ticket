@@ -17,16 +17,21 @@ type User struct {
 	LastName  string
 }
 
-func NewUserService(repo UserRepository, eventBus EventBus) *UserService {
+func NewUserService(repo UserRepository, eventBus UserEventBus) *UserService {
 	return &UserService{
 		repo:     repo,
 		eventBus: eventBus,
 	}
 }
 
+type UserEventBus interface {
+	Publish(data User, eventType EventType) error
+	Subscribe(subject User, wildcardID bool, eventTypes []EventType, callback func(data User, eventType EventType)) error
+}
+
 type UserService struct {
 	repo     UserRepository
-	eventBus EventBus
+	eventBus UserEventBus
 }
 
 func (s *UserService) GetUser(ID uint64) (User, error) {

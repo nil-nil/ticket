@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/nil-nil/ticket/internal/domain"
-	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,31 +37,28 @@ func TestNextKeyFunc(t *testing.T) {
 	})
 }
 
-type mockEventBusDriver struct {
+type mockEventBusDriver[T any] struct {
 	Event                *string
 	SubscriptionKey      *string
-	SubscriptionCallback *func(subject string)
+	SubscriptionCallback *func(eventKey string, data T)
 }
 
-func (m *mockEventBusDriver) Publish(subject string) error {
+func (m *mockEventBusDriver[T]) Publish(subject string, data T) error {
 	m.Event = &subject
 	return nil
 }
 
-func (m *mockEventBusDriver) Subscribe(subject string, callback func(subject string)) error {
+func (m *mockEventBusDriver[T]) Subscribe(subject string, callback func(eventKey string, data T)) error {
 	m.SubscriptionKey = &subject
 	m.SubscriptionCallback = &callback
 	return nil
 }
 
-func (m *mockEventBusDriver) Reset() {
+func (m *mockEventBusDriver[T]) Reset() {
 	m.Event = nil
 	m.SubscriptionKey = nil
 	m.SubscriptionCallback = nil
 }
-
-var eventDrv = mockEventBusDriver{}
-var mockEventBus = eventbus.NewEventBus(&eventDrv)
 
 type mockCacheDriver struct {
 	cache map[string]interface{}
