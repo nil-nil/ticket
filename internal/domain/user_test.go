@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
+	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,6 +47,9 @@ func TestGetUser(t *testing.T) {
 		},
 	}
 
+	eventDrv := mockEventBusDriver[domain.User]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
 	svc := domain.NewUserService(&repo, mockEventBus)
 
 	t.Run("get a valid user", func(t *testing.T) {
@@ -67,6 +71,9 @@ func TestCreateUser(t *testing.T) {
 			1: {ID: 1, FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
+
+	eventDrv := mockEventBusDriver[domain.User]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
 
 	svc := domain.NewUserService(&repo, mockEventBus)
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
+	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
@@ -47,8 +48,10 @@ func TestTicketMeta(t *testing.T) {
 }
 
 func TestGetTicket(t *testing.T) {
-	eventDrv.Reset()
-	svc := domain.NewTicketService(&repo, mockEventBus)
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.GetTicket(10)
 	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
@@ -60,8 +63,10 @@ func TestGetTicket(t *testing.T) {
 }
 
 func TestOpenTicket(t *testing.T) {
-	eventDrv.Reset()
-	svc := domain.NewTicketService(&repo, mockEventBus)
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.OpenTicket("test")
 	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
@@ -75,7 +80,10 @@ func TestOpenTicket(t *testing.T) {
 }
 
 func TestUpdateTicket(t *testing.T) {
-	svc := domain.NewTicketService(&repo, mockEventBus)
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
 
 	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
 		Description: ptr.To("Expected New Description"),
@@ -91,6 +99,65 @@ func TestUpdateTicket(t *testing.T) {
 	assert.Equal(t, "Expected New Description", meta.Description, "ticket should have description provided")
 	assert.NotNil(t, meta.OwnerID, "ticket owner id should no longer be nil")
 	assert.Equal(t, uint64(99), *meta.OwnerID, "ticket should have owner id provided")
+}
+
+func TestTicketObserver(t *testing.T) {
+	eventDrv := mockEventBusDriver[domain.Ticket]{}
+	mockEventBus := eventbus.NewEventBus(&eventDrv)
+
+	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
+
+	t.Run("valid ticket", func(t *testing.T) {
+		mockCache.cache["tickets.3"] = "value"
+		svc.ObserveTicketEvent(domain.Ticket{ID: 3}, domain.DeleteEvent)
+		assert.Equal(t, mockCache.cache["tickets.3"], domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, "cached ticket should be set")
+	})
+}
+
+func TestTicketStatusStrings(t *testing.T) {
+	table := []struct {
+		status      domain.TicketStatus
+		expect      string
+		description string
+	}{
+		{
+			status:      domain.TicketStatusUnknown,
+			expect:      "Unset",
+			description: "TicketStatusOpenString",
+		},
+		{
+			status:      99,
+			expect:      "Unset",
+			description: "TicketStatusOpenString",
+		},
+		{
+			status:      domain.TicketStatusOpen,
+			expect:      "Open",
+			description: "TicketStatusOpenString",
+		},
+		{
+			status:      domain.TicketStatusInProgress,
+			expect:      "In Progress",
+			description: "TicketStatusInProgressString",
+		},
+		{
+			status:      domain.TicketStatusBlocked,
+			expect:      "Blocked",
+			description: "TicketStatusBlockedString",
+		},
+		{
+			status:      domain.TicketStatusClosed,
+			expect:      "Closed",
+			description: "TicketStatusClosedString",
+		},
+	}
+
+	for _, tc := range table {
+		t.Run(tc.description, func(t *testing.T) {
+			v := tc.status.String()
+			assert.Equal(t, tc.expect, v)
+		})
+	}
 }
 
 type mockTicketRepo struct {

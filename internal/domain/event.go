@@ -32,8 +32,3 @@ func ParseEventString(s string) EventType {
 	}
 	return UnknownEvent
 }
-
-type EventBus interface {
-	Publish(subject interface{}, eventType EventType) error
-	Subscribe(subject interface{}, wildcardID bool, eventTypes []EventType, callback func(subjectType string, subjectId string, eventType EventType)) error
-}
