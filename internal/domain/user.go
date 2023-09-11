@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type UserRepository interface {
 	Find(ID uint64) (User, error)
@@ -17,21 +20,17 @@ type User struct {
 	LastName  string
 }
 
-func NewUserService(repo UserRepository, eventBus UserEventBus) *UserService {
+func NewUserService(repo UserRepository, eventBusDriver eventBusDriver) *UserService {
+	eventBus, _ := NewEventBus[User]("users", eventBusDriver)
 	return &UserService{
 		repo:     repo,
 		eventBus: eventBus,
 	}
 }
 
-type UserEventBus interface {
-	Publish(data User, eventType EventType) error
-	Subscribe(subject User, wildcardID bool, eventTypes []EventType, callback func(data User, eventType EventType)) error
-}
-
 type UserService struct {
 	repo     UserRepository
-	eventBus UserEventBus
+	eventBus *EventBus[User]
 }
 
 func (s *UserService) GetUser(ID uint64) (User, error) {
@@ -44,7 +43,7 @@ func (s *UserService) CreateUser(FirstName string, LastName string) (User, error
 		return User{}, err
 	}
 
-	err = s.eventBus.Publish(u, CreateEvent)
+	err = s.eventBus.Publish(fmt.Sprint(u.ID), CreateEvent, u)
 	if err != nil {
 		return User{}, err
 	}

@@ -35,7 +35,6 @@ func (m *mockEventBusDriver[T]) Reset() {
 }
 
 func TestPublishing(t *testing.T) {
-
 	t.Run("not a struct", func(t *testing.T) {
 		m := mockEventBusDriver[int]{}
 		eventBus := eventbus.NewEventBus(&m)

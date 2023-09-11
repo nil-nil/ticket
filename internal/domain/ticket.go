@@ -83,15 +83,16 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func NewTicketService(repo TicketRepository, eventBus TicketEventBus, cacheDriver cacheDriver) *TicketService {
+func NewTicketService(repo TicketRepository, eventDriver eventBusDriver, cacheDriver cacheDriver) *TicketService {
 	cache, _ := NewCache[Ticket]("tickets", cacheDriver)
+	eventBus, _ := NewEventBus[Ticket]("tickets", eventDriver)
 	svc := &TicketService{
 		repo:        repo,
 		eventBus:    eventBus,
 		ticketCache: cache,
 	}
 
-	eventBus.Subscribe(Ticket{}, true, []EventType{CreateEvent, UpdateEvent, DeleteEvent}, svc.ObserveTicketEvent)
+	eventBus.Subscribe(nil, []EventType{CreateEvent, UpdateEvent, DeleteEvent}, svc.ObserveTicketEvent)
 
 	return svc
 }
@@ -103,7 +104,7 @@ type TicketEventBus interface {
 
 type TicketService struct {
 	repo        TicketRepository
-	eventBus    TicketEventBus
+	eventBus    *EventBus[Ticket]
 	ticketCache *Cache[Ticket]
 }
 
@@ -122,7 +123,7 @@ func (s *TicketService) OpenTicket(Description string) (Ticket, error) {
 		return Ticket{}, err
 	}
 
-	err = s.eventBus.Publish(ticket, CreateEvent)
+	err = s.eventBus.Publish(fmt.Sprint(ticket.ID), CreateEvent, ticket)
 	if err != nil {
 		return Ticket{}, err
 	}
@@ -135,14 +136,14 @@ func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (
 		return Ticket{}, err
 	}
 
-	err = s.eventBus.Publish(ticket, UpdateEvent)
+	err = s.eventBus.Publish(fmt.Sprint(ticket.ID), UpdateEvent, ticket)
 	if err != nil {
 		return Ticket{}, err
 	}
 	return ticket, nil
 }
 
-func (s *TicketService) ObserveTicketEvent(data Ticket, eventType EventType) {
+func (s *TicketService) ObserveTicketEvent(eventType EventType, data Ticket) {
 	ticket, err := s.repo.Find(data.ID)
 	if err != nil {
 		s.ticketCache.Forget(fmt.Sprint(data.ID))
