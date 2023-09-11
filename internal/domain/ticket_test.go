@@ -114,6 +114,52 @@ func TestTicketObserver(t *testing.T) {
 	})
 }
 
+func TestTicketStatusStrings(t *testing.T) {
+	table := []struct {
+		status      domain.TicketStatus
+		expect      string
+		description string
+	}{
+		{
+			status:      domain.TicketStatusUnknown,
+			expect:      "Unset",
+			description: "TicketStatusOpenString",
+		},
+		{
+			status:      99,
+			expect:      "Unset",
+			description: "TicketStatusOpenString",
+		},
+		{
+			status:      domain.TicketStatusOpen,
+			expect:      "Open",
+			description: "TicketStatusOpenString",
+		},
+		{
+			status:      domain.TicketStatusInProgress,
+			expect:      "In Progress",
+			description: "TicketStatusInProgressString",
+		},
+		{
+			status:      domain.TicketStatusBlocked,
+			expect:      "Blocked",
+			description: "TicketStatusBlockedString",
+		},
+		{
+			status:      domain.TicketStatusClosed,
+			expect:      "Closed",
+			description: "TicketStatusClosedString",
+		},
+	}
+
+	for _, tc := range table {
+		t.Run(tc.description, func(t *testing.T) {
+			v := tc.status.String()
+			assert.Equal(t, tc.expect, v)
+		})
+	}
+}
+
 type mockTicketRepo struct {
 	transitions map[uint64][]domain.TicketTransition
 }
