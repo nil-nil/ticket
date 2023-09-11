@@ -41,8 +41,6 @@ func (t TicketStatus) String() string {
 	return "Unset"
 }
 
-const ticketCachePrefix = "tickets"
-
 type Ticket struct {
 	ID          uint64 `eventbus:"id"`
 	Transitions []TicketTransition
@@ -85,11 +83,12 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func NewTicketService(repo TicketRepository, eventBus TicketEventBus, cache cacheDriver) *TicketService {
+func NewTicketService(repo TicketRepository, eventBus TicketEventBus, cacheDriver cacheDriver) *TicketService {
+	cache, _ := NewCache[Ticket]("tickets", cacheDriver)
 	svc := &TicketService{
-		repo:     repo,
-		eventBus: eventBus,
-		cache:    cache,
+		repo:        repo,
+		eventBus:    eventBus,
+		ticketCache: cache,
 	}
 
 	eventBus.Subscribe(Ticket{}, true, []EventType{CreateEvent, UpdateEvent, DeleteEvent}, svc.ObserveTicketEvent)
@@ -103,18 +102,15 @@ type TicketEventBus interface {
 }
 
 type TicketService struct {
-	repo     TicketRepository
-	eventBus TicketEventBus
-	cache    cacheDriver
+	repo        TicketRepository
+	eventBus    TicketEventBus
+	ticketCache *Cache[Ticket]
 }
 
 func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
-	hit, err := s.cache.Get(fmt.Sprintf("%s.%d", ticketCachePrefix, ID))
+	hit, err := s.ticketCache.Get(fmt.Sprint(ID))
 	if err == nil {
-		ticket, ok := hit.(Ticket)
-		if ok {
-			return ticket, nil
-		}
+		return hit, nil
 	}
 
 	return s.repo.Find(ID)
@@ -149,9 +145,9 @@ func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (
 func (s *TicketService) ObserveTicketEvent(data Ticket, eventType EventType) {
 	ticket, err := s.repo.Find(data.ID)
 	if err != nil {
-		s.cache.Forget(fmt.Sprintf("%s.%d", ticketCachePrefix, data.ID))
+		s.ticketCache.Forget(fmt.Sprint(data.ID))
 		return
 	}
 
-	s.cache.Set(fmt.Sprintf("%s.%d", ticketCachePrefix, ticket.ID), ticket)
+	s.ticketCache.Set(fmt.Sprint(ticket.ID), ticket)
 }
