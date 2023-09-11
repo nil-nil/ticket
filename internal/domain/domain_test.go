@@ -37,29 +37,6 @@ func TestNextKeyFunc(t *testing.T) {
 	})
 }
 
-type mockEventBusDriver[T any] struct {
-	Event                *string
-	SubscriptionKey      *string
-	SubscriptionCallback *func(eventKey string, data T)
-}
-
-func (m *mockEventBusDriver[T]) Publish(subject string, data T) error {
-	m.Event = &subject
-	return nil
-}
-
-func (m *mockEventBusDriver[T]) Subscribe(subject string, callback func(eventKey string, data T)) error {
-	m.SubscriptionKey = &subject
-	m.SubscriptionCallback = &callback
-	return nil
-}
-
-func (m *mockEventBusDriver[T]) Reset() {
-	m.Event = nil
-	m.SubscriptionKey = nil
-	m.SubscriptionCallback = nil
-}
-
 type mockCacheDriver struct {
 	cache map[string]interface{}
 }

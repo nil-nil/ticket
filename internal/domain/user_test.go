@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
-	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,10 +46,9 @@ func TestGetUser(t *testing.T) {
 		},
 	}
 
-	eventDrv := mockEventBusDriver[domain.User]{}
-	mockEventBus := eventbus.NewEventBus(&eventDrv)
+	eventDrv := mockEventBusDriver{}
 
-	svc := domain.NewUserService(&repo, mockEventBus)
+	svc := domain.NewUserService(&repo, &eventDrv)
 
 	t.Run("get a valid user", func(t *testing.T) {
 		u, err := svc.GetUser(1)
@@ -72,10 +70,8 @@ func TestCreateUser(t *testing.T) {
 		},
 	}
 
-	eventDrv := mockEventBusDriver[domain.User]{}
-	mockEventBus := eventbus.NewEventBus(&eventDrv)
-
-	svc := domain.NewUserService(&repo, mockEventBus)
+	eventDrv := mockEventBusDriver{}
+	svc := domain.NewUserService(&repo, &eventDrv)
 
 	t.Run("create a valid user", func(t *testing.T) {
 		first := "Barry"
@@ -85,6 +81,7 @@ func TestCreateUser(t *testing.T) {
 		assert.Equal(t, u.FirstName, first)
 		assert.Equal(t, u.LastName, last)
 		assert.Equal(t, u, repo.users[u.ID])
-		assert.Equal(t, *eventDrv.Event, fmt.Sprintf("domain.User:%d:create", u.ID), "expected event matching subject")
+		assert.Equal(t, *eventDrv.EventSubject, fmt.Sprintf("users:%d:create", u.ID), "expected event matching subject")
+		assert.Equal(t, eventDrv.EventData, u, "expected matching event data")
 	})
 }

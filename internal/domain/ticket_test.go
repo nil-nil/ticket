@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
-	"github.com/nil-nil/ticket/internal/services/eventbus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
 )
@@ -48,10 +47,8 @@ func TestTicketMeta(t *testing.T) {
 }
 
 func TestGetTicket(t *testing.T) {
-	eventDrv := mockEventBusDriver[domain.Ticket]{}
-	mockEventBus := eventbus.NewEventBus(&eventDrv)
-
-	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
+	eventDrv := mockEventBusDriver{}
+	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
 	ticket, err := svc.GetTicket(10)
 	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
@@ -63,15 +60,14 @@ func TestGetTicket(t *testing.T) {
 }
 
 func TestOpenTicket(t *testing.T) {
-	eventDrv := mockEventBusDriver[domain.Ticket]{}
-	mockEventBus := eventbus.NewEventBus(&eventDrv)
-
-	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
+	eventDrv := mockEventBusDriver{}
+	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
 	ticket, err := svc.OpenTicket("test")
 	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
 	assert.NoError(t, err, "error should be nil")
-	assert.Equal(t, *eventDrv.Event, "domain.Ticket:4:create", "expected event matching subject")
+	assert.Equal(t, *eventDrv.EventSubject, "tickets:4:create", "expected event matching subject")
+	assert.Equal(t, ticket, eventDrv.EventData, "expected matching event data")
 
 	meta := ticket.Meta()
 	assert.Equal(t, domain.TicketStatusOpen, meta.Status, "ticket status should be open")
@@ -80,10 +76,8 @@ func TestOpenTicket(t *testing.T) {
 }
 
 func TestUpdateTicket(t *testing.T) {
-	eventDrv := mockEventBusDriver[domain.Ticket]{}
-	mockEventBus := eventbus.NewEventBus(&eventDrv)
-
-	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
+	eventDrv := mockEventBusDriver{}
+	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
 	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
 		Description: ptr.To("Expected New Description"),
@@ -92,7 +86,8 @@ func TestUpdateTicket(t *testing.T) {
 	})
 	assert.Equal(t, uint64(3), ticket.ID, "ticket should have same ID")
 	assert.NoError(t, err, "error should be nil")
-	assert.Equal(t, *eventDrv.Event, "domain.Ticket:3:update", "expected event matching subject")
+	assert.Equal(t, *eventDrv.EventSubject, "tickets:3:update", "expected event matching subject")
+	assert.Equal(t, ticket, eventDrv.EventData, "expected matching event data")
 
 	meta := ticket.Meta()
 	assert.Equal(t, domain.TicketStatusBlocked, meta.Status, "ticket status should have status provided")
@@ -102,14 +97,12 @@ func TestUpdateTicket(t *testing.T) {
 }
 
 func TestTicketObserver(t *testing.T) {
-	eventDrv := mockEventBusDriver[domain.Ticket]{}
-	mockEventBus := eventbus.NewEventBus(&eventDrv)
-
-	svc := domain.NewTicketService(&repo, mockEventBus, mockCache)
+	eventDrv := mockEventBusDriver{}
+	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
 	t.Run("valid ticket", func(t *testing.T) {
 		mockCache.cache["tickets.3"] = "value"
-		svc.ObserveTicketEvent(domain.Ticket{ID: 3}, domain.DeleteEvent)
+		svc.ObserveTicketEvent(domain.DeleteEvent, domain.Ticket{ID: 3})
 		assert.Equal(t, mockCache.cache["tickets.3"], domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, "cached ticket should be set")
 	})
 }
