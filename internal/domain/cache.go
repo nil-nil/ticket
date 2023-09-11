@@ -4,9 +4,9 @@ import "errors"
 
 var (
 	ErrNotFoundInCache    = errors.New("key not found in cache")
-	ErrCachedValueInvalid = errors.New("cached value in invalid")
+	ErrCachedValueInvalid = errors.New("cached value is invalid")
 	ErrCachePrefixInvalid = errors.New("not a valid cache prefix")
-	ErrCacheKeyInvalid    = errors.New("not a valid cache prefix")
+	ErrCacheKeyInvalid    = errors.New("not a valid cache key")
 )
 
 type cacheDriver interface {
