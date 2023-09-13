@@ -18,7 +18,7 @@ type testEvent struct {
 func TestBus(t *testing.T) {
 	var wg sync.WaitGroup
 
-	bus, _ := ticketeventbus.NewBus()
+	bus, _ := ticketeventbus.NewBus(".")
 
 	var (
 		t1, t2, t3 *testEvent

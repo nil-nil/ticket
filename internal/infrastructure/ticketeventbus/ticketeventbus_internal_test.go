@@ -3,6 +3,7 @@ package ticketeventbus
 import (
 	"testing"
 
+	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -10,7 +11,7 @@ func TestMatcher(t *testing.T) {
 	var partialWcOutput, exactOutput int
 	var wcOutput bool
 
-	bus, _ := NewBus()
+	bus, _ := NewBus(".")
 	bus.sub("*.test.example", func(eventKey string, data interface{}) {
 		partialWcOutput = 1
 	})
@@ -91,7 +92,10 @@ func TestSubscribe(t *testing.T) {
 		},
 	}
 
-	bus, _ := NewBus()
+	bus, _ := NewBus(".")
+
+	err := bus.sub("notvalid")
+	assert.EqualError(t, err, domain.ErrEventKeyInvalid.Error(), "expect meaningful error on invalid topic")
 
 	for _, tc := range table {
 		t.Run(tc.description, testCaseFunc(bus, tc))
@@ -101,9 +105,10 @@ func TestSubscribe(t *testing.T) {
 func testCaseFunc(bus *ticketEventBus, tc testCase) func(t *testing.T) {
 	return func(t *testing.T) {
 		var got string
-		bus.sub(tc.topic, func(eventKey string, data interface{}) {
+		err := bus.sub(tc.topic, func(eventKey string, data interface{}) {
 			got = tc.expectFuncOutput
 		})
+		assert.NoError(t, err, "valid sub shouldn't error")
 
 		_, ok := bus.subs[tc.expectL1]
 		assert.True(t, ok, "expected first sub layer [%s]", tc.expectL1)
