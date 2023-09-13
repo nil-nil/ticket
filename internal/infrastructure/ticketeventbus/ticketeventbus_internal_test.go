@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,34 +12,34 @@ func TestMatcher(t *testing.T) {
 	var wcOutput bool
 
 	bus, _ := NewBus(".")
-	bus.sub("*.test.example", func(eventKey string, data interface{}) {
+	bus.sub("*", "test", "example", func(eventKey string, data interface{}) {
 		partialWcOutput = 1
 	})
-	bus.sub("test.*.example", func(eventKey string, data interface{}) {
+	bus.sub("test", "*", "example", func(eventKey string, data interface{}) {
 		partialWcOutput = 2
 	})
-	bus.sub("test.example.*", func(eventKey string, data interface{}) {
+	bus.sub("test", "example", "*", func(eventKey string, data interface{}) {
 		partialWcOutput = 3
 	})
-	bus.sub("multi.*.*", func(eventKey string, data interface{}) {
+	bus.sub("multi", "*", "*", func(eventKey string, data interface{}) {
 		partialWcOutput = 4
 	})
-	bus.sub("*.multi.*", func(eventKey string, data interface{}) {
+	bus.sub("*", "multi", "*", func(eventKey string, data interface{}) {
 		partialWcOutput = 5
 	})
-	bus.sub("*.*.multi", func(eventKey string, data interface{}) {
+	bus.sub("*", "*", "multi", func(eventKey string, data interface{}) {
 		partialWcOutput = 6
 	})
-	bus.sub("1.test.example", func(eventKey string, data interface{}) {
+	bus.sub("1", "test", "example", func(eventKey string, data interface{}) {
 		exactOutput = 1
 	})
-	bus.sub("test.2.example", func(eventKey string, data interface{}) {
+	bus.sub("test", "2", "example", func(eventKey string, data interface{}) {
 		exactOutput = 2
 	})
-	bus.sub("test.example.3", func(eventKey string, data interface{}) {
+	bus.sub("test", "example", "3", func(eventKey string, data interface{}) {
 		exactOutput = 3
 	})
-	bus.sub("*.*.*", func(eventKey string, data interface{}) {
+	bus.sub("*", "*", "*", func(eventKey string, data interface{}) {
 		wcOutput = true
 	})
 
@@ -124,9 +123,6 @@ func TestSubscribe(t *testing.T) {
 
 	bus, _ := NewBus("")
 
-	err := bus.sub("notvalid", func(eventKey string, data interface{}) {})
-	assert.EqualError(t, err, domain.ErrEventKeyInvalid.Error(), "expect meaningful error on invalid topic")
-
 	for _, tc := range table {
 		t.Run(tc.description, testCaseFunc(bus, tc))
 	}
@@ -135,7 +131,8 @@ func TestSubscribe(t *testing.T) {
 func testCaseFunc(bus *ticketEventBus, tc testCase) func(t *testing.T) {
 	return func(t *testing.T) {
 		var got string
-		err := bus.sub(tc.topic, func(eventKey string, data interface{}) {
+		parts := strings.Split(tc.topic, bus.separator)
+		err := bus.sub(parts[0], parts[1], parts[2], func(eventKey string, data interface{}) {
 			got = tc.expectFuncOutput
 		})
 		assert.NoError(t, err, "valid sub shouldn't error")

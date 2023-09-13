@@ -20,22 +20,17 @@ type ticketEventBus struct {
 	separator string
 }
 
-func (t *ticketEventBus) sub(topic string, f func(eventKey string, data interface{})) error {
-	parts := strings.Split(topic, t.separator)
-	if len(parts) != 3 {
-		return domain.ErrEventKeyInvalid
-	}
-
+func (t *ticketEventBus) sub(l1, l2, l3 string, f func(eventKey string, data interface{})) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if _, ok := t.subs[parts[0]]; !ok {
-		t.subs[parts[0]] = map[string]map[string][]func(eventKey string, data interface{}){}
+	if _, ok := t.subs[l1]; !ok {
+		t.subs[l1] = map[string]map[string][]func(eventKey string, data interface{}){}
 	}
-	if _, ok := t.subs[parts[0]][parts[1]]; !ok {
-		t.subs[parts[0]][parts[1]] = map[string][]func(eventKey string, data interface{}){}
+	if _, ok := t.subs[l1][l2]; !ok {
+		t.subs[l1][l2] = map[string][]func(eventKey string, data interface{}){}
 	}
-	t.subs[parts[0]][parts[1]][parts[2]] = append(t.subs[parts[0]][parts[1]][parts[2]], f)
+	t.subs[l1][l2][l3] = append(t.subs[l1][l2][l3], f)
 
 	return nil
 }
@@ -95,5 +90,9 @@ func (t *ticketEventBus) Publish(subject string, data interface{}) error {
 }
 
 func (t *ticketEventBus) Subscribe(subject string, callback func(eventKey string, data interface{})) error {
-	return t.sub(subject, callback)
+	parts := strings.Split(subject, t.separator)
+	if len(parts) != 3 {
+		return domain.ErrEventKeyInvalid
+	}
+	return t.sub(parts[0], parts[1], parts[2], callback)
 }

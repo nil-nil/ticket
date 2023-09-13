@@ -41,7 +41,12 @@ func TestBus(t *testing.T) {
 	// Give the subs time to start
 	time.Sleep(500000)
 
-	t.Run("TestInvalidTopic", func(t *testing.T) {
+	t.Run("TestInvalidSubscribeTopic", func(t *testing.T) {
+		err := bus.Subscribe("invalid", func(eventKey string, data interface{}) {})
+		assert.EqualError(t, err, domain.ErrEventKeyInvalid.Error(), "expect meaningful error on publishing invalid topic")
+	})
+
+	t.Run("TestInvalidPublishTopic", func(t *testing.T) {
 		err := bus.Publish("invalid", domain.User{ID: 1, FirstName: "Test", LastName: "Abc"})
 		assert.EqualError(t, err, domain.ErrEventKeyInvalid.Error(), "expect meaningful error on publishing invalid topic")
 	})
