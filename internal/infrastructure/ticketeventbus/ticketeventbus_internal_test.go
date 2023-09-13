@@ -6,6 +6,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMatcher(t *testing.T) {
+	var partialWcOutput, exactOutput int
+	var wcOutput bool
+
+	bus, _ := NewBus()
+	bus.sub("*.test.example", func(eventKey string, data interface{}) {
+		partialWcOutput = 1
+	})
+	bus.sub("test.*.example", func(eventKey string, data interface{}) {
+		partialWcOutput = 2
+	})
+	bus.sub("test.example.*", func(eventKey string, data interface{}) {
+		partialWcOutput = 3
+	})
+	bus.sub("1.test.example", func(eventKey string, data interface{}) {
+		exactOutput = 1
+	})
+	bus.sub("test.2.example", func(eventKey string, data interface{}) {
+		exactOutput = 2
+	})
+	bus.sub("test.example.3", func(eventKey string, data interface{}) {
+		exactOutput = 3
+	})
+	bus.sub("*.*.*", func(eventKey string, data interface{}) {
+		wcOutput = true
+	})
+
+	table := []struct {
+		description           string
+		expectPartialWcOutput int
+		expectExactOutput     int
+	}{
+		{description: "1.test.example", expectPartialWcOutput: 1, expectExactOutput: 1},
+		{description: "2.test.example", expectPartialWcOutput: 1, expectExactOutput: 0},
+		{description: "test.2.example", expectPartialWcOutput: 2, expectExactOutput: 2},
+		{description: "test.3.example", expectPartialWcOutput: 2, expectExactOutput: 0},
+		{description: "test.example.3", expectPartialWcOutput: 3, expectExactOutput: 3},
+		{description: "test.example.4", expectPartialWcOutput: 3, expectExactOutput: 0},
+	}
+
+	for _, tc := range table {
+		t.Run(tc.description, func(t *testing.T) {
+			partialWcOutput, exactOutput = 0, 0
+			wcOutput = false
+
+			var funcs []func(eventKey string, data interface{}) = bus.match(tc.description)
+			for _, f := range funcs {
+				f("", nil)
+			}
+
+			assert.Equal(t, tc.expectExactOutput, exactOutput, "expected exact topic match")
+			assert.Equal(t, tc.expectPartialWcOutput, partialWcOutput, "expected partial wildcard topic match")
+			assert.True(t, wcOutput, "always expects full wildcards to match")
+		})
+	}
+}
+
 func TestSubscribe(t *testing.T) {
 	table := []testCase{
 		{
