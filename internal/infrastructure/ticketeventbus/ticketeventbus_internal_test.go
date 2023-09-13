@@ -1,6 +1,7 @@
 package ticketeventbus
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nil-nil/ticket/internal/domain"
@@ -72,7 +73,6 @@ func TestMatcher(t *testing.T) {
 		{description: "*.100.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
 		{description: "100.*.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
 		{description: "100.200.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
-		{description: "invalidtopic", expectPartialWcOutput: 0, expectExactOutput: 0},
 	}
 
 	for _, tc := range table {
@@ -80,16 +80,16 @@ func TestMatcher(t *testing.T) {
 			partialWcOutput, exactOutput = 0, 0
 			wcOutput = false
 
-			funcs := bus.match(tc.description)
+			parts := strings.Split(tc.description, bus.separator)
+
+			funcs := bus.match(parts[0], parts[1], parts[2])
 			for _, f := range funcs {
 				f("", nil)
 			}
 
 			assert.Equal(t, tc.expectExactOutput, exactOutput, "expected exact topic match")
 			assert.Equal(t, tc.expectPartialWcOutput, partialWcOutput, "expected partial wildcard topic match")
-			if tc.description != "invalidtopic" {
-				assert.True(t, wcOutput, "always expects full wildcards to match")
-			}
+			assert.True(t, wcOutput, "always expects full wildcards to match")
 		})
 	}
 }
