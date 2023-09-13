@@ -21,6 +21,15 @@ func TestMatcher(t *testing.T) {
 	bus.sub("test.example.*", func(eventKey string, data interface{}) {
 		partialWcOutput = 3
 	})
+	bus.sub("multi.*.*", func(eventKey string, data interface{}) {
+		partialWcOutput = 4
+	})
+	bus.sub("*.multi.*", func(eventKey string, data interface{}) {
+		partialWcOutput = 5
+	})
+	bus.sub("*.*.multi", func(eventKey string, data interface{}) {
+		partialWcOutput = 6
+	})
 	bus.sub("1.test.example", func(eventKey string, data interface{}) {
 		exactOutput = 1
 	})
@@ -45,6 +54,25 @@ func TestMatcher(t *testing.T) {
 		{description: "test.3.example", expectPartialWcOutput: 2, expectExactOutput: 0},
 		{description: "test.example.3", expectPartialWcOutput: 3, expectExactOutput: 3},
 		{description: "test.example.4", expectPartialWcOutput: 3, expectExactOutput: 0},
+		{description: "multi.anything.100", expectPartialWcOutput: 4, expectExactOutput: 0},
+		{description: "anything.multi.100", expectPartialWcOutput: 5, expectExactOutput: 0},
+		{description: "anything.100.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
+		{description: "*.test.example", expectPartialWcOutput: 1, expectExactOutput: 0},
+		{description: "test.*.example", expectPartialWcOutput: 2, expectExactOutput: 0},
+		{description: "test.example.*", expectPartialWcOutput: 3, expectExactOutput: 0},
+		{description: "multi.*.*", expectPartialWcOutput: 4, expectExactOutput: 0},
+		{description: "multi.100.*", expectPartialWcOutput: 4, expectExactOutput: 0},
+		{description: "multi.*.100", expectPartialWcOutput: 4, expectExactOutput: 0},
+		{description: "multi.100.200", expectPartialWcOutput: 4, expectExactOutput: 0},
+		{description: "*.multi.*", expectPartialWcOutput: 5, expectExactOutput: 0},
+		{description: "100.multi.*", expectPartialWcOutput: 5, expectExactOutput: 0},
+		{description: "*.multi.100", expectPartialWcOutput: 5, expectExactOutput: 0},
+		{description: "100.multi.200", expectPartialWcOutput: 5, expectExactOutput: 0},
+		{description: "*.*.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
+		{description: "*.100.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
+		{description: "100.*.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
+		{description: "100.200.multi", expectPartialWcOutput: 6, expectExactOutput: 0},
+		{description: "invalidtopic", expectPartialWcOutput: 0, expectExactOutput: 0},
 	}
 
 	for _, tc := range table {
@@ -59,7 +87,9 @@ func TestMatcher(t *testing.T) {
 
 			assert.Equal(t, tc.expectExactOutput, exactOutput, "expected exact topic match")
 			assert.Equal(t, tc.expectPartialWcOutput, partialWcOutput, "expected partial wildcard topic match")
-			assert.True(t, wcOutput, "always expects full wildcards to match")
+			if tc.description != "invalidtopic" {
+				assert.True(t, wcOutput, "always expects full wildcards to match")
+			}
 		})
 	}
 }
@@ -68,7 +98,7 @@ func TestSubscribe(t *testing.T) {
 	table := []testCase{
 		{
 			description:      "L1 wildcard",
-			topic:            "*.test.example",
+			topic:            "*:test:example",
 			expectL1:         "*",
 			expectL2:         "test",
 			expectL3:         "example",
@@ -76,7 +106,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			description:      "L2 wildcard",
-			topic:            "test.*.example",
+			topic:            "test:*:example",
 			expectL1:         "test",
 			expectL2:         "*",
 			expectL3:         "example",
@@ -84,7 +114,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			description:      "L2 wildcard",
-			topic:            "test.example.*",
+			topic:            "test:example:*",
 			expectL1:         "test",
 			expectL2:         "example",
 			expectL3:         "*",
@@ -92,7 +122,7 @@ func TestSubscribe(t *testing.T) {
 		},
 	}
 
-	bus, _ := NewBus(".")
+	bus, _ := NewBus("")
 
 	err := bus.sub("notvalid", func(eventKey string, data interface{}) {})
 	assert.EqualError(t, err, domain.ErrEventKeyInvalid.Error(), "expect meaningful error on invalid topic")
