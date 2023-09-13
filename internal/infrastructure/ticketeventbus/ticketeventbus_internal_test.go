@@ -52,7 +52,7 @@ func TestMatcher(t *testing.T) {
 			partialWcOutput, exactOutput = 0, 0
 			wcOutput = false
 
-			var funcs []func(eventKey string, data interface{}) = bus.match(tc.description)
+			funcs := bus.match(tc.description)
 			for _, f := range funcs {
 				f("", nil)
 			}
@@ -94,7 +94,7 @@ func TestSubscribe(t *testing.T) {
 
 	bus, _ := NewBus(".")
 
-	err := bus.sub("notvalid")
+	err := bus.sub("notvalid", func(eventKey string, data interface{}) {})
 	assert.EqualError(t, err, domain.ErrEventKeyInvalid.Error(), "expect meaningful error on invalid topic")
 
 	for _, tc := range table {
