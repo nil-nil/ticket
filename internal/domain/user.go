@@ -1,13 +1,14 @@
 package domain
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
 
 type UserRepository interface {
-	Find(ID uint64) (User, error)
-	Create(FirstName string, LastName string) (User, error)
+	Find(ctx context.Context, ID uint64) (User, error)
+	Create(ctx context.Context, FirstName string, LastName string) (User, error)
 }
 
 type User struct {
@@ -33,12 +34,12 @@ type UserService struct {
 	eventBus *EventBus[User]
 }
 
-func (s *UserService) GetUser(ID uint64) (User, error) {
-	return s.repo.Find(ID)
+func (s *UserService) GetUser(ctx context.Context, ID uint64) (User, error) {
+	return s.repo.Find(ctx, ID)
 }
 
-func (s *UserService) CreateUser(FirstName string, LastName string) (User, error) {
-	u, err := s.repo.Create(FirstName, LastName)
+func (s *UserService) CreateUser(ctx context.Context, FirstName string, LastName string) (User, error) {
+	u, err := s.repo.Create(ctx, FirstName, LastName)
 	if err != nil {
 		return User{}, err
 	}

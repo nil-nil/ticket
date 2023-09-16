@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -50,11 +51,11 @@ func TestGetTicket(t *testing.T) {
 	eventDrv := mockEventBusDriver{}
 	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
-	ticket, err := svc.GetTicket(10)
+	ticket, err := svc.GetTicket(context.Background(), 10)
 	assert.Equal(t, domain.Ticket{}, ticket, "ticket should be empty")
 	assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
 
-	ticket, err = svc.GetTicket(3)
+	ticket, err = svc.GetTicket(context.Background(), 3)
 	assert.Equal(t, domain.Ticket{ID: 3, Transitions: repo.transitions[3]}, ticket, "ticket should not be empty")
 	assert.NoError(t, err, "error should be nil")
 }
@@ -63,7 +64,7 @@ func TestOpenTicket(t *testing.T) {
 	eventDrv := mockEventBusDriver{}
 	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
-	ticket, err := svc.OpenTicket("test")
+	ticket, err := svc.OpenTicket(context.Background(), "test")
 	assert.Equal(t, uint64(4), ticket.ID, "ticket should have next ID")
 	assert.NoError(t, err, "error should be nil")
 	assert.Equal(t, *eventDrv.EventSubject, "tickets:4:create", "expected event matching subject")
@@ -79,7 +80,7 @@ func TestUpdateTicket(t *testing.T) {
 	eventDrv := mockEventBusDriver{}
 	svc := domain.NewTicketService(&repo, &eventDrv, mockCache)
 
-	ticket, err := svc.UpdateTicket(3, domain.TicketUpdateParameters{
+	ticket, err := svc.UpdateTicket(context.Background(), 3, domain.TicketUpdateParameters{
 		Description: ptr.To("Expected New Description"),
 		Status:      domain.TicketStatusBlocked,
 		OwnerID:     ptr.To(uint64(99)),
@@ -157,7 +158,7 @@ type mockTicketRepo struct {
 	transitions map[uint64][]domain.TicketTransition
 }
 
-func (m *mockTicketRepo) Find(ID uint64) (domain.Ticket, error) {
+func (m *mockTicketRepo) Find(ctx context.Context, ID uint64) (domain.Ticket, error) {
 	transitions, ok := m.transitions[ID]
 	if !ok {
 		return domain.Ticket{}, domain.ErrNotFound
@@ -169,7 +170,7 @@ func (m *mockTicketRepo) Find(ID uint64) (domain.Ticket, error) {
 	return ticket, nil
 }
 
-func (m *mockTicketRepo) Open(Description string) (domain.Ticket, error) {
+func (m *mockTicketRepo) Open(ctx context.Context, Description string) (domain.Ticket, error) {
 	ticketId := nextKey(m.transitions)
 
 	m.transitions[ticketId] = []domain.TicketTransition{
@@ -186,7 +187,7 @@ func (m *mockTicketRepo) Open(Description string) (domain.Ticket, error) {
 	}, nil
 }
 
-func (m *mockTicketRepo) Update(ID uint64, Params domain.TicketUpdateParameters) (domain.Ticket, error) {
+func (m *mockTicketRepo) Update(ctx context.Context, ID uint64, Params domain.TicketUpdateParameters) (domain.Ticket, error) {
 	m.transitions[ID] = append(m.transitions[ID], domain.TicketTransition{
 		Timestamp:   time.Now(),
 		Status:      Params.Status,
