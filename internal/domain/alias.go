@@ -1,9 +1,12 @@
 package domain
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type AliasRepository interface {
-	Find(FindAliasParameters) (Alias, error)
+	Find(context.Context, FindAliasParameters) (Alias, error)
 }
 
 type FindAliasParameters struct {
@@ -32,6 +35,6 @@ type AliasService struct {
 	repo AliasRepository
 }
 
-func (s *AliasService) Find(params FindAliasParameters) (Alias, error) {
-	return s.repo.Find(params)
+func (s *AliasService) Find(ctx context.Context, params FindAliasParameters) (Alias, error) {
+	return s.repo.Find(ctx, params)
 }

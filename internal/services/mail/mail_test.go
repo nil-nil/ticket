@@ -1,6 +1,7 @@
 package mail_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nil-nil/ticket/internal/domain"
@@ -27,7 +28,7 @@ type mockAliasRepository struct {
 	aliases []domain.Alias
 }
 
-func (m mockAliasRepository) Find(params domain.FindAliasParameters) (domain.Alias, error) {
+func (m mockAliasRepository) Find(ctx context.Context, params domain.FindAliasParameters) (domain.Alias, error) {
 	if params.User == nil && params.Domain == nil {
 		return domain.Alias{}, domain.ErrNotFound
 	}

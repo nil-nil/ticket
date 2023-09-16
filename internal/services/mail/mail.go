@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -51,7 +52,7 @@ func (s *Server) ValidateRecipientAddress(address string) error {
 		return nil
 	}
 
-	_, err = s.aliases.Find(domain.FindAliasParameters{User: &user, Domain: &mailDomain})
+	_, err = s.aliases.Find(context.Background(), domain.FindAliasParameters{User: &user, Domain: &mailDomain})
 	if errors.Is(err, domain.ErrNotFound) {
 		return ErrAliasNotFound
 	} else if err != nil {
