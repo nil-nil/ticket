@@ -97,11 +97,6 @@ func NewTicketService(repo TicketRepository, eventDriver eventBusDriver, cacheDr
 	return svc
 }
 
-type TicketEventBus interface {
-	Publish(data Ticket, eventType EventType) error
-	Subscribe(subject Ticket, wildcardID bool, eventTypes []EventType, callback func(data Ticket, eventType EventType)) error
-}
-
 type TicketService struct {
 	repo        TicketRepository
 	eventBus    *EventBus[Ticket]
