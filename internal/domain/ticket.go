@@ -1,14 +1,15 @@
 package domain
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
 
 type TicketRepository interface {
-	Find(ID uint64) (Ticket, error)
-	Open(Description string) (Ticket, error)
-	Update(ID uint64, Params TicketUpdateParameters) (Ticket, error)
+	Find(ctx context.Context, ID uint64) (Ticket, error)
+	Open(ctx context.Context, Description string) (Ticket, error)
+	Update(ctx context.Context, ID uint64, Params TicketUpdateParameters) (Ticket, error)
 }
 
 type TicketUpdateParameters struct {
@@ -103,17 +104,17 @@ type TicketService struct {
 	ticketCache *Cache[Ticket]
 }
 
-func (s *TicketService) GetTicket(ID uint64) (Ticket, error) {
+func (s *TicketService) GetTicket(ctx context.Context, ID uint64) (Ticket, error) {
 	hit, err := s.ticketCache.Get(fmt.Sprint(ID))
 	if err == nil {
 		return hit, nil
 	}
 
-	return s.repo.Find(ID)
+	return s.repo.Find(ctx, ID)
 }
 
-func (s *TicketService) OpenTicket(Description string) (Ticket, error) {
-	ticket, err := s.repo.Open(Description)
+func (s *TicketService) OpenTicket(ctx context.Context, Description string) (Ticket, error) {
+	ticket, err := s.repo.Open(ctx, Description)
 	if err != nil {
 		return Ticket{}, err
 	}
@@ -125,8 +126,8 @@ func (s *TicketService) OpenTicket(Description string) (Ticket, error) {
 	return ticket, nil
 }
 
-func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (Ticket, error) {
-	ticket, err := s.repo.Update(ID, Params)
+func (s *TicketService) UpdateTicket(ctx context.Context, ID uint64, Params TicketUpdateParameters) (Ticket, error) {
+	ticket, err := s.repo.Update(ctx, ID, Params)
 	if err != nil {
 		return Ticket{}, err
 	}
@@ -139,7 +140,8 @@ func (s *TicketService) UpdateTicket(ID uint64, Params TicketUpdateParameters) (
 }
 
 func (s *TicketService) ObserveTicketEvent(eventType EventType, data Ticket) {
-	ticket, err := s.repo.Find(data.ID)
+	ctx := context.Background()
+	ticket, err := s.repo.Find(ctx, data.ID)
 	if err != nil {
 		s.ticketCache.Forget(fmt.Sprint(data.ID))
 		return
