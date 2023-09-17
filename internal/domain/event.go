@@ -45,7 +45,7 @@ var (
 	ErrEventKeyInvalid    = errors.New("not a valid event subject key")
 )
 
-func NewEventBus[T any](prefix string, driver eventBusDriver) (*EventBus[T], error) {
+func NewEventBus[T any](prefix string, driver EventBusDriver) (*EventBus[T], error) {
 	if prefix == "" {
 		return nil, ErrEventPrefixInvalid
 	}
@@ -56,7 +56,7 @@ func NewEventBus[T any](prefix string, driver eventBusDriver) (*EventBus[T], err
 }
 
 type EventBus[T any] struct {
-	driver eventBusDriver
+	driver EventBusDriver
 	prefix string
 }
 
@@ -102,7 +102,7 @@ func (e *EventBus[T]) Subscribe(ID *string, eventTypes []EventType, callback fun
 	return nil
 }
 
-type eventBusDriver interface {
+type EventBusDriver interface {
 	Publish(subject string, data interface{}) error
 	Subscribe(subject string, callback func(eventKey string, data interface{})) error
 }

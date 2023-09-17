@@ -84,7 +84,7 @@ func (t *Ticket) Meta() TicketMeta {
 	return meta
 }
 
-func NewTicketService(repo TicketRepository, eventDriver eventBusDriver, cacheDriver cacheDriver) *TicketService {
+func NewTicketService(repo TicketRepository, eventDriver EventBusDriver, cacheDriver CacheDriver) *TicketService {
 	cache, _ := NewCache[Ticket]("tickets", cacheDriver)
 	eventBus, _ := NewEventBus[Ticket]("tickets", eventDriver)
 	svc := &TicketService{
