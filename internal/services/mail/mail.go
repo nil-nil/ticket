@@ -14,31 +14,22 @@ var (
 	ErrAliasNotFound       = errors.New("alias is not found")
 )
 
-type MailServerRepository interface {
-	IsAuthoritative(domain string) bool
-	IsBlocked(address string) bool
-}
-
 type AuthFunc func(username, password string) (domain.User, error)
 
-func NewServer(mailServerRepo MailServerRepository, aliasRepo domain.AliasRepository, authFunc AuthFunc) *Server {
+func NewServer(mailServerRepo MailServerRepository, cacheDriver domain.CacheDriver, eventBusDriver domain.EventBusDriver, authFunc AuthFunc) *Server {
+	svc, _ := NewMailServerService(mailServerRepo, cacheDriver, eventBusDriver)
 	return &Server{
-		AuthFunc:   authFunc,
-		repository: mailServerRepo,
-		aliases:    domain.NewAliasService(aliasRepo),
+		AuthFunc:    authFunc,
+		mailService: svc,
 	}
 }
 
 type Server struct {
-	AuthFunc   AuthFunc
-	repository MailServerRepository
-	aliases    *domain.AliasService
+	AuthFunc    AuthFunc
+	mailService *MailServerService
 }
 
 func (s *Server) ValidateSenderAddress(address string) error {
-	if s.repository.IsBlocked(address) {
-		return ErrBlockedSender
-	}
 	return nil
 }
 
@@ -48,11 +39,11 @@ func (s *Server) ValidateRecipientAddress(address string) error {
 		return ErrInvalidEmailAddress
 	}
 
-	if authoritative := s.repository.IsAuthoritative(mailDomain); !authoritative {
+	if authoritative := s.mailService.IsAuthoritative(mailDomain); !authoritative {
 		return nil
 	}
 
-	_, err = s.aliases.Find(context.Background(), domain.FindAliasParameters{User: &user, Domain: &mailDomain})
+	_, err = s.mailService.GetAlias(context.Background(), user, mailDomain)
 	if errors.Is(err, domain.ErrNotFound) {
 		return ErrAliasNotFound
 	} else if err != nil {
