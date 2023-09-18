@@ -6,11 +6,11 @@ import (
 
 	"github.com/emersion/go-smtp"
 	"github.com/nil-nil/ticket/internal/domain"
-	"github.com/nil-nil/ticket/internal/services/mail"
+	"github.com/nil-nil/ticket/internal/services/email"
 )
 
-func NewServer(mailServerRepo mail.MailServerRepository, cacheDriver domain.CacheDriver, eventBusDriver domain.EventBusDriver, authFunc mail.AuthFunc) *smtp.Server {
-	mailServer := mail.NewServer(mailServerRepo, cacheDriver, eventBusDriver, authFunc)
+func NewServer(mailServerRepo email.MailServerRepository, cacheDriver domain.CacheDriver, eventBusDriver domain.EventBusDriver, authFunc email.AuthFunc) *smtp.Server {
+	mailServer := email.NewServer(mailServerRepo, cacheDriver, eventBusDriver, authFunc)
 	be := backend{server: mailServer}
 	server := smtp.NewServer(&be)
 	server.Addr = ":25"
@@ -25,7 +25,7 @@ func NewServer(mailServerRepo mail.MailServerRepository, cacheDriver domain.Cach
 }
 
 type backend struct {
-	server *mail.Server
+	server *email.Server
 }
 
 func (b *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
@@ -33,7 +33,7 @@ func (b *backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 }
 
 type session struct {
-	server *mail.Server
+	server *email.Server
 	user   *domain.User
 	from   string
 	to     []string
