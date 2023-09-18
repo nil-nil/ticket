@@ -7,6 +7,7 @@ import (
 
 type AliasRepository interface {
 	Find(context.Context, FindAliasParameters) (Alias, error)
+	Create(ctx context.Context, user string, domain string) (Alias, error)
 }
 
 type FindAliasParameters struct {
@@ -37,4 +38,13 @@ type AliasService struct {
 
 func (s *AliasService) Find(ctx context.Context, params FindAliasParameters) (Alias, error) {
 	return s.repo.Find(ctx, params)
+}
+
+func (s *AliasService) Create(ctx context.Context, user string, domain string) (Alias, error) {
+	alias, err := s.repo.Create(ctx, user, domain)
+	if err != nil {
+		return Alias{}, err
+	}
+
+	return alias, nil
 }

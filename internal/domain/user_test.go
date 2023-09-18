@@ -30,7 +30,7 @@ func (r *mockUserRepository) Create(ctx context.Context, FirstName string, LastN
 		}
 	}
 
-	userID := nextKey(r.users)
+	userID := nextMapKey(r.users)
 	r.users[userID] = domain.User{
 		ID:        userID,
 		FirstName: FirstName,

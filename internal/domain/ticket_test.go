@@ -171,7 +171,7 @@ func (m *mockTicketRepo) Find(ctx context.Context, ID uint64) (domain.Ticket, er
 }
 
 func (m *mockTicketRepo) Open(ctx context.Context, Description string) (domain.Ticket, error) {
-	ticketId := nextKey(m.transitions)
+	ticketId := nextMapKey(m.transitions)
 
 	m.transitions[ticketId] = []domain.TicketTransition{
 		{

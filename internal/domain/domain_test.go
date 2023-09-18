@@ -8,7 +8,7 @@ import (
 )
 
 // Get the next key in a map of keys and values
-func nextKey[T any](values map[uint64]T) uint64 {
+func nextMapKey[T any](values map[uint64]T) uint64 {
 	var lastKey uint64
 	for k := range values {
 		if k > lastKey {
@@ -22,7 +22,7 @@ func nextKey[T any](values map[uint64]T) uint64 {
 func TestNextKeyFunc(t *testing.T) {
 	t.Run("test first key", func(t *testing.T) {
 		testMap := make(map[uint64]string, 0)
-		k := nextKey(testMap)
+		k := nextMapKey(testMap)
 		assert.Equal(t, uint64(1), k, "first key should be 1")
 	})
 
@@ -32,7 +32,7 @@ func TestNextKeyFunc(t *testing.T) {
 			50: {},
 			51: {},
 		}
-		k := nextKey(testMap)
+		k := nextMapKey(testMap)
 		assert.Equal(t, uint64(52), k, "test next key with gaps")
 	})
 }
