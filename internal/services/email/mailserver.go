@@ -2,6 +2,7 @@ package email
 
 import (
 	"context"
+	"net/mail"
 	"slices"
 
 	"github.com/nil-nil/ticket/internal/domain"
@@ -68,7 +69,12 @@ func (s *MailServerService) GetAlias(ctx context.Context, user string, mailDomai
 	return domain.Alias{}, ErrAliasNotFound
 }
 
+func (s *MailServerService) CreateEmail(ctx context.Context, msg mail.Message) (domain.Email, error) {
+	return domain.CreateEmail(ctx, s.repo, msg)
+}
+
 type MailServerRepository interface {
 	GetAliases(ctx context.Context, domain *string) ([]domain.Alias, error)
 	GetAuthoritativeDomains(ctx context.Context) ([]string, error)
+	domain.CreateEmailRepository
 }

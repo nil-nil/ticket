@@ -74,14 +74,7 @@ func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 }
 
 func (s *session) Data(r io.Reader) error {
-	// b, err := io.ReadAll(r)
-	// if err != nil {
-	// 	return err
-	// }
-	// if err = HandleMessage(&b); err != nil {
-	// 	return err
-	// }
-	return nil
+	return s.server.ReceiveData(r)
 }
 
 func (s *session) Reset() {}

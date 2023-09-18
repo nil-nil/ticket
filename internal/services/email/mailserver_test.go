@@ -62,6 +62,7 @@ func TestObserver(t *testing.T) {
 type mockMailServerRepository struct {
 	authoritativeDomains []string
 	aliases              []domain.Alias
+	emails               map[uint64]domain.Email
 }
 
 func (m *mockMailServerRepository) GetAuthoritativeDomains(ctx context.Context) ([]string, error) {
@@ -79,6 +80,22 @@ func (m *mockMailServerRepository) GetAliases(ctx context.Context, mailDomain *s
 		return matches, nil
 	}
 	return m.aliases, nil
+}
+
+func (m *mockMailServerRepository) CreateEmail(ctx context.Context, email domain.Email) (domain.Email, error) {
+	email.ID = func(values map[uint64]domain.Email) uint64 {
+		var lastKey uint64
+		for k := range values {
+			if k > lastKey {
+				lastKey = k
+			}
+		}
+
+		return lastKey + 1
+	}(m.emails)
+	m.emails[email.ID] = email
+
+	return email, nil
 }
 
 type mockCacheDriver struct {

@@ -23,7 +23,7 @@ func CreateEmail(ctx context.Context, repo CreateEmailRepository, msg mail.Messa
 		date = time.Now()
 	}
 
-	subject := msg.Header.Get("subject")
+	subject := msg.Header.Get("Subject")
 
 	return repo.CreateEmail(ctx, Email{Message: msg, Date: date, Subject: subject})
 }
