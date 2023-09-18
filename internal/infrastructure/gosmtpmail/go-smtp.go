@@ -9,8 +9,8 @@ import (
 	"github.com/nil-nil/ticket/internal/services/mail"
 )
 
-func NewServer(mailServerRepo mail.MailServerRepository, aliasRepo domain.AliasRepository, authFunc mail.AuthFunc) *smtp.Server {
-	mailServer := mail.NewServer(mailServerRepo, aliasRepo, authFunc)
+func NewServer(mailServerRepo mail.MailServerRepository, cacheDriver domain.CacheDriver, eventBusDriver domain.EventBusDriver, authFunc mail.AuthFunc) *smtp.Server {
+	mailServer := mail.NewServer(mailServerRepo, cacheDriver, eventBusDriver, authFunc)
 	be := backend{server: mailServer}
 	server := smtp.NewServer(&be)
 	server.Addr = ":25"
