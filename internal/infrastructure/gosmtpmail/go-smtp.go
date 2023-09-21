@@ -1,12 +1,21 @@
 package gosmtpmail
 
 import (
+	"errors"
 	"io"
 	"time"
 
 	"github.com/emersion/go-smtp"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/services/email"
+)
+
+var (
+	ErrMailboxNotFound = &smtp.SMTPError{
+		Code:         550,
+		EnhancedCode: smtp.EnhancedCode{5, 1, 1},
+		Message:      "The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces.",
+	}
 )
 
 func NewServer(mailServerRepo email.MailServerRepository, cacheDriver domain.CacheDriver, eventBusDriver domain.EventBusDriver, authFunc email.AuthFunc) *smtp.Server {
@@ -65,6 +74,9 @@ func (s *session) Mail(from string, opts *smtp.MailOptions) error {
 
 func (s *session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	err := s.server.ValidateRecipientAddress(to)
+	if errors.Is(err, email.ErrAliasNotFound) {
+		return ErrMailboxNotFound
+	}
 	if err != nil {
 		return err
 	}
