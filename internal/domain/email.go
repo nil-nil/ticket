@@ -3,14 +3,17 @@ package domain
 import (
 	"context"
 	"net/mail"
+	"strings"
 	"time"
 )
 
 type Email struct {
-	ID      uint64
-	Subject string
-	Date    time.Time
-	Message mail.Message
+	ID         uint64
+	Subject    string
+	Sender     string
+	Recipients []string
+	Date       time.Time
+	Message    mail.Message
 }
 
 type EmailCreator interface {
@@ -24,6 +27,19 @@ func CreateEmail(ctx context.Context, repo EmailCreator, msg mail.Message) (Emai
 	}
 
 	subject := msg.Header.Get("Subject")
+	sender := removeNames(msg.Header.Get("From"))
+	recipients := strings.Split(msg.Header.Get("To"), ",")
+	recipientEmails := make([]string, 0, len(recipients))
+	for _, recipient := range recipients {
+		recipientEmails = append(recipientEmails, removeNames(recipient))
+	}
+	return repo.CreateEmail(ctx, Email{Message: msg, Date: date, Subject: subject, Sender: sender, Recipients: recipientEmails})
+}
 
-	return repo.CreateEmail(ctx, Email{Message: msg, Date: date, Subject: subject})
+func removeNames(address string) string {
+	parsedAddress, err := mail.ParseAddress(address)
+	if err != nil || parsedAddress == nil {
+		return ""
+	}
+	return parsedAddress.Address
 }
