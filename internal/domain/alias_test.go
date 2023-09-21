@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,22 @@ func TestCreateAlias(t *testing.T) {
 	assert.NoError(t, err, "error should be nil")
 }
 
+func TestDeleteAlias(t *testing.T) {
+	var repo = mockAliasRepo{
+		aliases: map[string]domain.Alias{
+			"test@test.com":      {ID: 1, User: "test", Domain: "test.com"},
+			"sample@example.com": {ID: 2, User: "sample", Domain: "example.com"},
+		},
+	}
+
+	svc := domain.NewAliasService(&repo)
+
+	alias, err := svc.Delete(context.Background(), 2)
+	assert.Equal(t, repo.aliases["sample@example.com"], alias, "alias should not be empty")
+	assert.NotNil(t, alias.DeletedAt, "DeletedAt should be set now")
+	assert.NoError(t, err, "error should be nil")
+}
+
 type mockAliasRepo struct {
 	aliases map[string]domain.Alias
 }
@@ -86,6 +103,22 @@ func (m *mockAliasRepo) Create(ctx context.Context, user string, mailDomain stri
 	email := fmt.Sprintf("%s@%s", user, mailDomain)
 	m.aliases[email] = domain.Alias{Domain: mailDomain, User: user, ID: m.getNextId()}
 	return m.aliases[email], nil
+}
+
+func (m *mockAliasRepo) Delete(ctx context.Context, ID uint64) (domain.Alias, error) {
+	var alias domain.Alias
+	for k := range m.aliases {
+		if m.aliases[k].ID == ID {
+			alias = m.aliases[k]
+			now := time.Now()
+			alias.DeletedAt = &now
+			m.aliases[k] = alias
+		}
+	}
+	if alias == (domain.Alias{}) {
+		return alias, domain.ErrNotFound
+	}
+	return alias, nil
 }
 
 func (m *mockAliasRepo) getNextId() uint64 {
