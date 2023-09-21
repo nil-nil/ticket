@@ -23,10 +23,12 @@ func TestValidateSenderAddress(t *testing.T) {
 }
 
 func TestValidateRecipientAddress(t *testing.T) {
+	now := time.Now()
 	repo := &mockMailServerRepository{
 		authoritativeDomains: []string{"test.com"},
 		aliases: []domain.Alias{
 			{User: "test", Domain: "test.com", ID: 1},
+			{User: "bob", Domain: "test.com", ID: 2, DeletedAt: &now},
 		},
 	}
 
@@ -40,6 +42,7 @@ func TestValidateRecipientAddress(t *testing.T) {
 		{description: "valid non-authoritative recipient", email: "alan@example.com", expectErr: nil},
 		{description: "valid authoritative recipient", email: "test@test.com", expectErr: nil},
 		{description: "invalid authoritative recipient", email: "fail@test.com", expectErr: ErrAliasNotFound},
+		{description: "valid but deleted authoritative recipient", email: "bob@test.com", expectErr: ErrAliasNotFound},
 	}
 
 	for _, tc := range table {

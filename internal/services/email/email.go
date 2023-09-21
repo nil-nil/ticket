@@ -45,11 +45,14 @@ func (s *Server) ValidateRecipientAddress(address string) error {
 		return nil
 	}
 
-	_, err = s.mailService.GetAlias(context.Background(), user, mailDomain)
+	alias, err := s.mailService.GetAlias(context.Background(), user, mailDomain)
 	if errors.Is(err, domain.ErrNotFound) {
 		return ErrAliasNotFound
 	} else if err != nil {
 		return err
+	}
+	if alias.DeletedAt != nil {
+		return ErrAliasNotFound
 	}
 
 	return nil
