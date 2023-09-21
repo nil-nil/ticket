@@ -13,11 +13,11 @@ type Email struct {
 	Message mail.Message
 }
 
-type CreateEmailRepository interface {
+type EmailCreator interface {
 	CreateEmail(ctx context.Context, email Email) (Email, error)
 }
 
-func CreateEmail(ctx context.Context, repo CreateEmailRepository, msg mail.Message) (Email, error) {
+func CreateEmail(ctx context.Context, repo EmailCreator, msg mail.Message) (Email, error) {
 	date, err := msg.Header.Date()
 	if err != nil {
 		date = time.Now()

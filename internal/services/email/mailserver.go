@@ -76,5 +76,5 @@ func (s *MailServerService) CreateEmail(ctx context.Context, msg mail.Message) (
 type MailServerRepository interface {
 	GetAliases(ctx context.Context, domain *string) ([]domain.Alias, error)
 	GetAuthoritativeDomains(ctx context.Context) ([]string, error)
-	domain.CreateEmailRepository
+	domain.EmailCreator
 }
