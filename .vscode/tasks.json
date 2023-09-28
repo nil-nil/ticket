@@ -17,7 +17,7 @@
       "label": "api",
       "type": "shell",
       "command": "air",
-      "args": ["-c", ".air.toml"]
+      "args": ["-c", ".api.air.toml"]
     },
     {
       "label": "tailwindcss - watch",
@@ -51,7 +51,13 @@
     },
     {
       "label": "frontend - watch",
-      "dependsOn": ["templ - watch", "tailwindcss - watch"]
+      "dependsOn": ["templ - watch", "tailwindcss - watch", "frontend - serve"]
+    },
+    {
+      "label": "frontend - serve",
+      "type": "shell",
+      "command": "air",
+      "args": ["-c", ".frontend.air.toml"]
     }
   ]
 }

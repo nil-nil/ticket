@@ -40,7 +40,16 @@ func Page() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script></head><body class=\"bg-slate-900\"></body></html>")
+		_, err = templBuffer.WriteString("</script></head><body class=\"bg-slate-900\"><h1>")
+		if err != nil {
+			return err
+		}
+		var_4 := `Hello!`
+		_, err = templBuffer.WriteString(var_4)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</h1></body></html>")
 		if err != nil {
 			return err
 		}
