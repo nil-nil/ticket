@@ -3,6 +3,7 @@ module github.com/nil-nil/ticket
 go 1.21
 
 require (
+	github.com/a-h/templ v0.2.334
 	github.com/deepmap/oapi-codegen v1.13.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/emersion/go-smtp v0.18.0
