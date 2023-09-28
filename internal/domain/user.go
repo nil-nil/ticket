@@ -21,7 +21,7 @@ type User struct {
 	LastName  string
 }
 
-func NewUserService(repo UserRepository, eventBusDriver eventBusDriver) *UserService {
+func NewUserService(repo UserRepository, eventBusDriver EventBusDriver) *UserService {
 	eventBus, _ := NewEventBus[User]("users", eventBusDriver)
 	return &UserService{
 		repo:     repo,

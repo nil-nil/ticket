@@ -9,13 +9,13 @@ var (
 	ErrCacheKeyInvalid    = errors.New("not a valid cache key")
 )
 
-type cacheDriver interface {
+type CacheDriver interface {
 	Set(key string, value interface{}) error
 	Forget(key string) error
 	Get(key string) (interface{}, error)
 }
 
-func NewCache[T any](prefix string, driver cacheDriver) (*Cache[T], error) {
+func NewCache[T any](prefix string, driver CacheDriver) (*Cache[T], error) {
 	if prefix == "" {
 		return nil, ErrCachePrefixInvalid
 	}
@@ -28,7 +28,7 @@ func NewCache[T any](prefix string, driver cacheDriver) (*Cache[T], error) {
 
 type Cache[T any] struct {
 	prefix string
-	driver cacheDriver
+	driver CacheDriver
 }
 
 func (c *Cache[T]) Set(key string, value T) error {
