@@ -13,16 +13,20 @@ import (
 func main() {
 	server := frontend.NewServer()
 
+	// Shutdown the app on signal
+	ctx := context.Background()
+	// Listen for SIGINT to gracefully shutdown.
+	nctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	defer stop()
+
 	// Graceful shutdown
 	go func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, os.Interrupt)
-		<-quit
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		<-nctx.Done()
+		log.Println("shutdown initiated")
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		if err := server.Shutdown(ctx); err != nil {
-			log.Fatal(err)
-		}
+		server.Shutdown(ctx)
+		log.Println("shutdown")
 	}()
 
 	log.Printf("starting http server on %s", server.Addr)
