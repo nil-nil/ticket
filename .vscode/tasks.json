@@ -51,10 +51,10 @@
     },
     {
       "label": "frontend - watch",
-      "dependsOn": ["templ - watch", "tailwindcss - watch", "frontend - serve"]
+      "dependsOn": ["templ - watch", "tailwindcss - watch", "templ - serve"]
     },
     {
-      "label": "frontend - serve",
+      "label": "templ - serve",
       "type": "shell",
       "command": "air",
       "args": ["-c", ".frontend.air.toml"]
