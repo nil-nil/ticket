@@ -8,6 +8,8 @@ require (
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/emersion/go-smtp v0.18.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/gorilla/handlers v1.5.1
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/leandro-lugaresi/hub v1.1.1
 	github.com/stretchr/testify v1.8.3
@@ -23,6 +25,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emersion/go-sasl v0.0.0-20200509203442-7bfe0ed36a21 // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.9.1 // indirect

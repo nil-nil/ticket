@@ -9,7 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
-func Page() templ.Component {
+func page() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -40,16 +40,15 @@ func Page() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script></head><body class=\"bg-slate-900\"><h1>")
+		_, err = templBuffer.WriteString("</script></head><body class=\"dark:bg-slate-950 bg-slate-200\">")
 		if err != nil {
 			return err
 		}
-		var_4 := `Hello!`
-		_, err = templBuffer.WriteString(var_4)
+		err = var_1.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1></body></html>")
+		_, err = templBuffer.WriteString("</body></html>")
 		if err != nil {
 			return err
 		}

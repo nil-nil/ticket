@@ -1,6 +1,6 @@
 package components
 
-templ Page() {
+templ page() {
         <!DOCTYPE html> 
 	<html>
 		<head>
@@ -10,8 +10,8 @@ templ Page() {
 			<link rel="stylesheet" href="/assets/css/styles.min.css"/>
 			<script src="/assets/js/htmx.min.js"></script>
 		</head>
-		<body class="bg-slate-900">
-			<h1>Hello!</h1>
+		<body class="dark:bg-slate-950 bg-slate-200">
+			{ children... }
 		</body>
 	</html>
 }
