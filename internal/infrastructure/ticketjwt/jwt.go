@@ -1,13 +1,14 @@
-package api
+package ticketjwt
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/nil-nil/ticket/internal/domain"
 )
 
-type GetUserFunc func(userID uint64) (user User, err error)
+type GetUserFunc func(userID uint64) (user domain.User, err error)
 
 type jwtAuthProvider struct {
 	getUserFunc   GetUserFunc
@@ -17,53 +18,53 @@ type jwtAuthProvider struct {
 	tokenLifetime uint64
 }
 
-func (p jwtAuthProvider) GetUser(tokenString string) (ok bool, user User, err error) {
+func (p jwtAuthProvider) GetUser(tokenString string) (ok bool, user domain.User, err error) {
 	token, err := p.getToken(tokenString)
 	if err != nil || (token != nil && !token.Valid) {
-		return false, User{}, err
+		return false, domain.User{}, err
 	}
 
 	var userID uint64
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return false, User{}, err
+		return false, domain.User{}, err
 	}
 
 	// We're using the "sub" claim for the user ID
 	sub, ok := claims["sub"]
 	if !ok {
-		return false, User{}, fmt.Errorf("token claims does not have a subject")
+		return false, domain.User{}, fmt.Errorf("token claims does not have a subject")
 	}
 
 	// The JSON decoder trats the number as a float64
 	floatSub, ok := sub.(float64)
 	if !ok {
-		return false, User{}, fmt.Errorf("token subject is not a uint64")
+		return false, domain.User{}, fmt.Errorf("token subject is not a uint64")
 	}
 	userID = uint64(floatSub)
 
 	u, err := p.getUserFunc(userID)
 	if err != nil {
-		return false, User{}, err
+		return false, domain.User{}, err
 	}
 
 	return token.Valid, u, nil
 }
 
-func (p jwtAuthProvider) NewToken(user User) (string, error) {
+func (p jwtAuthProvider) NewToken(user domain.User) (string, error) {
 	var method jwt.SigningMethod
 	switch p.signingMethod {
 	case RS512:
 		method = jwt.SigningMethodRS512
 	}
 
-	if user.Id == 0 {
+	if user.ID == 0 {
 		return "", fmt.Errorf("invalid jwt subject for user %+v", user)
 	}
 
 	token := jwt.NewWithClaims(method, jwt.MapClaims{
-		"sub": user.Id,
+		"sub": user.ID,
 		"nbf": time.Now().Unix(),
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(time.Second * time.Duration(p.tokenLifetime)).Unix(),
@@ -91,9 +92,6 @@ func (p jwtAuthProvider) getToken(tokenString string) (*jwt.Token, error) {
 		return p.publicKey, nil
 	})
 }
-
-// Make sure we conform to api.AuthProvider
-var _ AuthProvider = (*jwtAuthProvider)(nil)
 
 func NewJwtAuthProvider(
 	getUserFunc GetUserFunc,

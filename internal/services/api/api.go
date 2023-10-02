@@ -3,13 +3,16 @@ package api
 import (
 	"context"
 	"fmt"
+
+	"github.com/deepmap/oapi-codegen/pkg/types"
+	"github.com/nil-nil/ticket/internal/domain"
 )
 
 type Api struct {
 }
 
 type UserRespository interface {
-	GetUser(userID uint64) (User, error)
+	GetUser(userID uint64) (domain.User, error)
 }
 
 type PasswordProvider interface {
@@ -18,9 +21,9 @@ type PasswordProvider interface {
 }
 
 type AuthProvider interface {
-	NewToken(user User) (token string, err error)
+	NewToken(user domain.User) (token string, err error)
 	ValidateToken(token string) (ok bool, err error)
-	GetUser(token string) (ok bool, user User, err error)
+	GetUser(token string) (ok bool, user domain.User, err error)
 }
 
 // Make sure we conform to StrictServerInterface
@@ -32,10 +35,21 @@ func NewApi() *Api {
 }
 
 func (*Api) GetUser(ctx context.Context, req GetUserRequestObject) (GetUserResponseObject, error) {
-	authenticatedUser, ok := ctx.Value(userMiddlewareValue).(User)
+	authenticatedUser, ok := ctx.Value(userMiddlewareValue).(domain.User)
 	if !ok {
 		return nil, fmt.Errorf("not found")
 	}
 
-	return GetUser200JSONResponse{authenticatedUser}, nil
+	u := User{
+		Id:        authenticatedUser.ID,
+		CreatedAt: types.Date{Time: authenticatedUser.CreatedAt},
+		UpdatedAt: types.Date{Time: authenticatedUser.UpdatedAt},
+		FirstName: authenticatedUser.FirstName,
+		LastName:  authenticatedUser.LastName,
+	}
+	if authenticatedUser.DeletedAt != nil {
+		u.DeletedAt = &types.Date{Time: *authenticatedUser.DeletedAt}
+	}
+
+	return GetUser200JSONResponse{u}, nil
 }

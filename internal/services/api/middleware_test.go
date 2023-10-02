@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
+	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/services/api"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func mockHandlerFunc(ctx echo.Context, request interface{}) (response interface{
 
 type mockAuthProvider struct{}
 
-func (p mockAuthProvider) NewToken(_ api.User) (token string, err error) {
+func (p mockAuthProvider) NewToken(_ domain.User) (token string, err error) {
 	return "", nil
 }
 
@@ -25,8 +26,8 @@ func (p mockAuthProvider) ValidateToken(_ string) (ok bool, err error) {
 	return true, nil
 }
 
-func (p mockAuthProvider) GetUser(_ string) (ok bool, user api.User, err error) {
-	return true, api.User{}, nil
+func (p mockAuthProvider) GetUser(_ string) (ok bool, user domain.User, err error) {
+	return true, domain.User{}, nil
 }
 
 var table = []struct {

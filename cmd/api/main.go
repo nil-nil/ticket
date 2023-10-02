@@ -12,6 +12,8 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/nil-nil/ticket/internal/domain"
+	"github.com/nil-nil/ticket/internal/infrastructure/ticketjwt"
 	"github.com/nil-nil/ticket/internal/services/api"
 	"github.com/nil-nil/ticket/internal/services/config"
 )
@@ -26,13 +28,13 @@ func main() {
 	}
 
 	apiServer := api.NewApi()
-	authProvider, err := api.NewJwtAuthProvider(
-		func(userID uint64) (user api.User, err error) {
-			return api.User{Id: 999}, nil
+	authProvider, err := ticketjwt.NewJwtAuthProvider(
+		func(userID uint64) (user domain.User, err error) {
+			return domain.User{ID: 999}, nil
 		},
 		[]byte(config.Auth.JWT.PublicKey),
 		[]byte(config.Auth.JWT.PrivateKey),
-		api.GetJWTProtocol(config.Auth.JWT.SigningMethod),
+		ticketjwt.GetJWTProtocol(config.Auth.JWT.SigningMethod),
 		config.Auth.JWT.TokenLifetime,
 	)
 	if err != nil {
