@@ -37,34 +37,38 @@ func Login() templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</h1><div class=\"dark:bg-slate-900 bg-slate-100 shadow w-full rounded-lg\"><div class=\"px-5 py-7\"><label class=\"font-semibold text-sm text-slate-600 dark:text-slate-400 pb-1 block\">")
+			_, err = templBuffer.WriteString("</h1><div class=\"dark:bg-slate-900 bg-slate-100 shadow w-full rounded-lg\"><form class=\"px-5 py-7\" hx-post=\"/login\">")
 			if err != nil {
 				return err
 			}
-			var_4 := `Email`
+			err = input(inputParams{
+				ID:       "email",
+				Label:    "Email",
+				Required: true,
+				Type:     "email",
+			}).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			err = input(inputParams{
+				ID:       "password",
+				Label:    "Password",
+				Required: true,
+				Type:     "password",
+			}).Render(ctx, templBuffer)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("<button type=\"submit\" class=\"mt-4 transition duration-200 bg-slate-700 hover:bg-slate-600 focus:bg-slate-500 focus:shadow-sm focus:ring-4 focus:ring-slate-500 focus:ring-opacity-50 text-white w-full py-2.5 rounded-lg text-sm shadow-sm hover:shadow-md font-semibold text-center inline-block\"><span class=\"inline-block mr-2\">")
+			if err != nil {
+				return err
+			}
+			var_4 := `Login`
 			_, err = templBuffer.WriteString(var_4)
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</label><input type=\"text\" class=\"border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full bg-white dark:bg-slate-800 text-slate-950 dark:text-slate-100 border-slate-200 dark:border-slate-900\"><label class=\"font-semibold text-sm text-slate-600 dark:text-slate-400 pb-1 block\">")
-			if err != nil {
-				return err
-			}
-			var_5 := `Password`
-			_, err = templBuffer.WriteString(var_5)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</label><input type=\"text\" class=\"border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full bg-white dark:bg-slate-800 text-slate-950 dark:text-slate-100 border-slate-200 dark:border-slate-900\"><button type=\"button\" class=\"transition duration-200 bg-slate-700 hover:bg-slate-600 focus:bg-slate-500 focus:shadow-sm focus:ring-4 focus:ring-slate-500 focus:ring-opacity-50 text-white w-full py-2.5 rounded-lg text-sm shadow-sm hover:shadow-md font-semibold text-center inline-block\"><span class=\"inline-block mr-2\">")
-			if err != nil {
-				return err
-			}
-			var_6 := `Login`
-			_, err = templBuffer.WriteString(var_6)
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</span><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" class=\"w-4 h-4 inline-block\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 8l4 4m0 0l-4 4m4-4H3\"></path></svg></button></div></div></div></div>")
+			_, err = templBuffer.WriteString("</span><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" class=\"w-4 h-4 inline-block\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 8l4 4m0 0l-4 4m4-4H3\"></path></svg></button></form></div></div></div>")
 			if err != nil {
 				return err
 			}

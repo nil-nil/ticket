@@ -39,9 +39,14 @@ func NewServer(config config.Config) *http.Server {
 	}
 
 	// Set up auth
+	// TODO: replace placeholder func with real function
 	authProvider, err := ticketjwt.NewJwtAuthProvider(
 		func(ctx context.Context, userID uint64) (user domain.User, err error) {
-			return domain.User{ID: 999}, nil
+			return domain.User{
+				ID:        1,
+				FirstName: "Tom",
+				LastName:  "Salmon",
+			}, nil
 		},
 		[]byte(config.Auth.JWT.PublicKey),
 		[]byte(config.Auth.JWT.PrivateKey),
@@ -52,13 +57,20 @@ func NewServer(config config.Config) *http.Server {
 		log.Error("error creating auth provider", "error", err)
 		panic(err)
 	}
-	authSvc := NewAuthService(nil, authProvider, nil)
+	// TODO: replace placeholder func with real function
+	authSvc := NewAuthService(placeholderAuthenticator, authProvider, nil, log)
 	auth := authSvc.AuthMiddleware()
+
+	handler := handler{
+		log:     log,
+		authSvc: authSvc,
+	}
 
 	router := httprouter.New()
 	router.ServeFiles("/assets/*filepath", http.FS(assets))
 	router.Handler(http.MethodGet, "/login", templ.Handler(components.Login()))
-	router.Handler(http.MethodGet, "/secure", auth(templ.Handler(components.Login())))
+	router.Handler(http.MethodPost, "/login", authSvc.Login())
+	router.Handler(http.MethodGet, "/", auth(handler.Secure()))
 
 	return &http.Server{
 		Addr: addr,
@@ -95,3 +107,15 @@ func (w *statusResponseWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 	w.statusCode = statusCode
 }
+
+type placeholderAuth struct{}
+
+func (p *placeholderAuth) AuthenticateUsernamePassword(_ context.Context, username string, password string) (domain.User, error) {
+	return domain.User{
+		ID:        1,
+		FirstName: "Tom",
+		LastName:  "Salmon",
+	}, nil
+}
+
+var placeholderAuthenticator = &placeholderAuth{}

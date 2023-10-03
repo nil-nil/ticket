@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/nil-nil/ticket/internal/domain"
@@ -28,13 +29,15 @@ type AuthService struct {
 	UsernamePasswordAuthenticator UsernamePasswordAuthenticator
 	AuthProvider                  AuthProvider
 	cookieName                    string
+	log                           *slog.Logger
 }
 
-func NewAuthService(UsernamePasswordAuthenticator UsernamePasswordAuthenticator, AuthProvider AuthProvider, cookieName *string) *AuthService {
+func NewAuthService(UsernamePasswordAuthenticator UsernamePasswordAuthenticator, AuthProvider AuthProvider, cookieName *string, logger *slog.Logger) *AuthService {
 	s := AuthService{
 		UsernamePasswordAuthenticator: UsernamePasswordAuthenticator,
 		AuthProvider:                  AuthProvider,
 		cookieName:                    "TICKET_SESSION",
+		log:                           logger,
 	}
 	if cookieName != nil {
 		s.cookieName = *cookieName
@@ -69,4 +72,59 @@ func (a *AuthService) AuthMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func (a *AuthService) Login() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		email := r.Form.Get("email")
+		if email == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		password := r.Form.Get("password")
+		if password == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		u, err := a.UsernamePasswordAuthenticator.AuthenticateUsernamePassword(r.Context(), email, password)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token, err := a.AuthProvider.NewToken(u)
+		if err != nil {
+			a.log.Error("failed issuing a new token", "user", u, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		cookie := http.Cookie{
+			Name:     a.cookieName,
+			Value:    token,
+			Path:     "/",
+			MaxAge:   604800,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+
+		if len(cookie.String()) > 4096 {
+			a.log.Error("jwt too long for cookie", "user", u, "error", err, "length", len(cookie.String()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &cookie)
+		w.Header().Add("HX-Location", "/")
+		w.WriteHeader(http.StatusOK)
+	})
 }
