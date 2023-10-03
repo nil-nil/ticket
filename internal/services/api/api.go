@@ -22,7 +22,7 @@ type PasswordProvider interface {
 
 type AuthProvider interface {
 	NewToken(user domain.User) (token string, err error)
-	ValidateToken(token string) (ok bool, err error)
+	ValidateToken(token string) (err error)
 	GetUser(token string) (user domain.User, err error)
 }
 

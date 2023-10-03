@@ -22,8 +22,8 @@ func (p mockAuthProvider) NewToken(_ domain.User) (token string, err error) {
 	return "", nil
 }
 
-func (p mockAuthProvider) ValidateToken(_ string) (ok bool, err error) {
-	return true, nil
+func (p mockAuthProvider) ValidateToken(_ string) (err error) {
+	return nil
 }
 
 func (p mockAuthProvider) GetUser(_ string) (user domain.User, err error) {

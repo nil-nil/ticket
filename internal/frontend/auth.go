@@ -16,7 +16,7 @@ type AuthProvider interface {
 	NewToken(user domain.User) (token string, err error)
 
 	// ValidateToken verifies that a token is valid and trusted by us
-	ValidateToken(token string) (ok bool, err error)
+	ValidateToken(token string) (err error)
 
 	// GetUser verifies that a token is valid and trusted by us, identifies the user it is tied to, and returns that user.
 	//

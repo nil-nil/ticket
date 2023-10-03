@@ -87,12 +87,15 @@ func (p jwtAuthProvider) NewToken(user domain.User) (string, error) {
 	return token.SignedString(p.privateKey)
 }
 
-func (p jwtAuthProvider) ValidateToken(tokenString string) (ok bool, err error) {
+func (p jwtAuthProvider) ValidateToken(tokenString string) (err error) {
 	token, err := p.getToken(tokenString)
 	if err != nil {
-		return false, err
+		return errors.Join(ErrGettingToken, err)
 	}
-	return token.Valid, nil
+	if !token.Valid {
+		return ErrTokenInvalid
+	}
+	return nil
 }
 
 func (p jwtAuthProvider) getToken(tokenString string) (*jwt.Token, error) {

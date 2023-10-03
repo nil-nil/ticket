@@ -47,8 +47,7 @@ func TestValidateTokenSuccess(t *testing.T) {
 	token, err := p.NewToken(domain.User{ID: 1})
 	assert.NoError(t, err, "successful userSubjectFunc should not error")
 
-	ok, err := p.ValidateToken(token)
-	assert.True(t, ok)
+	err = p.ValidateToken(token)
 	assert.NoError(t, err)
 }
 
@@ -59,8 +58,7 @@ func TestValidateTokenFailure(t *testing.T) {
 	token, err := p.NewToken(domain.User{ID: 1})
 	assert.NoError(t, err, "successful userSubjectFunc should not error")
 
-	ok, err := p.ValidateToken(token)
-	assert.False(t, ok)
+	err = p.ValidateToken(token)
 	assert.Error(t, err)
 }
 
@@ -68,9 +66,8 @@ func TestValidateTokenError(t *testing.T) {
 	p, err := ticketjwt.NewJwtAuthProvider(mockGetUserSuccessFunc, publicKey, privateKey, ticketjwt.RS512, 1000)
 	assert.NoError(t, err, "NewJwtAuthProvider should not error")
 
-	ok, err := p.ValidateToken("invalidtoken")
-	assert.Error(t, err)
-	assert.False(t, ok)
+	err = p.ValidateToken("invalidtoken")
+	assert.ErrorIs(t, err, ticketjwt.ErrGettingToken, "expected meaningful error")
 }
 
 func TestGetTokenUserSuccess(t *testing.T) {
