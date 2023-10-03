@@ -2,16 +2,26 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/nil-nil/ticket/internal/frontend"
+	"github.com/nil-nil/ticket/internal/services/config"
 )
 
 func main() {
-	server := frontend.NewServer()
+	configFilePath := flag.String("config", "config.yaml", "Configuration file")
+	flag.Parse()
+
+	config, err := config.ReadAndParseConfigFile(*configFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	server := frontend.NewServer(config)
 
 	// Shutdown the app on signal
 	ctx := context.Background()
