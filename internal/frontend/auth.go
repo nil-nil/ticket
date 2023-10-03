@@ -52,6 +52,7 @@ var UserContextKey = userContextKeyType{}
 // The middleware handler extracts the user's token from the cookie name set on the AuthService, parses it, gets the associated user and sets that use on the context for the request.
 //
 // The context key for the user is UserContextKey.
+// This middleware should come before log middleware.
 func (a *AuthService) AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +64,9 @@ func (a *AuthService) AuthMiddleware() func(http.Handler) http.Handler {
 
 			u, err := a.AuthProvider.GetUser(r.Context(), cookie.Value)
 			if err != nil {
+				// Log here because auth middleware should be before log middleware so we can log the user's details
+				a.log.Info("", "status", http.StatusUnauthorized, "method", r.Method, "path", r.URL.Path, "client", r.RemoteAddr, "useragent", r.UserAgent())
+
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}

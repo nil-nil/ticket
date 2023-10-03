@@ -29,7 +29,6 @@ func NewServer(config config.Config) *http.Server {
 	addr := fmt.Sprintf("%s:%d", config.HTTP.ListenAddress, config.HTTP.Port)
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	logMiddleware := NewLogMiddleware(log)
 
 	// Extract the assets subfolder form the embedded assets fs
 	assets, err := fs.Sub(embedAssets, "assets")
@@ -59,31 +58,27 @@ func NewServer(config config.Config) *http.Server {
 	}
 	// TODO: replace placeholder func with real function
 	authSvc := NewAuthService(placeholderAuthenticator, authProvider, nil, log)
-	auth := authSvc.AuthMiddleware()
-
-	handler := handler{
-		log:     log,
-		authSvc: authSvc,
-	}
 
 	router := httprouter.New()
+	logMiddleware := NewLogMiddleware(log, "base")
 	router.ServeFiles("/assets/*filepath", http.FS(assets))
-	router.Handler(http.MethodGet, "/login", templ.Handler(components.Login()))
-	router.Handler(http.MethodPost, "/login", authSvc.Login())
-	router.Handler(http.MethodGet, "/", auth(handler.Secure()))
+	router.Handler(http.MethodGet, "/login", logMiddleware(templ.Handler(components.Login())))
+	router.Handler(http.MethodPost, "/login", logMiddleware(authSvc.Login()))
+
+	authRouter := NewHandler(authSvc, log)
+	router.HandleMethodNotAllowed = false
+	router.NotFound = authRouter
 
 	return &http.Server{
 		Addr: addr,
 		Handler: handlers.CompressHandler(
-			logMiddleware(
-				router,
-			),
+			router,
 		),
 	}
 }
 
 // A Log middleware to log http requests
-func NewLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
+func NewLogMiddleware(log *slog.Logger, router string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -92,7 +87,11 @@ func NewLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 				statusCode:     http.StatusOK,
 			}
 			next.ServeHTTP(statusWriter, r)
-			log.Info("", "status", statusWriter.statusCode, "handlerLatencyMs", float64(time.Since(start))/float64(time.Millisecond), "method", r.Method, "path", r.URL.Path, "client", r.RemoteAddr, "useragent", r.UserAgent())
+			msg := log
+			if user, ok := r.Context().Value(UserContextKey).(domain.User); ok {
+				msg = log.With("user", user)
+			}
+			msg.Info("", "status", statusWriter.statusCode, "handlerLatencyMs", float64(time.Since(start))/float64(time.Millisecond), "method", r.Method, "path", r.URL.Path, "client", r.RemoteAddr, "router", router, "useragent", r.UserAgent())
 		})
 	}
 }

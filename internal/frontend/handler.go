@@ -4,23 +4,46 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/frontend/components"
 )
 
 type handler struct {
-	authSvc *AuthService
-	log     *slog.Logger
+	router         *httprouter.Router
+	authSvc        *AuthService
+	log            *slog.Logger
+	authMiddleware func(http.Handler) http.Handler
+	logMiddleware  func(http.Handler) http.Handler
 }
 
-func (h *handler) Secure() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, ok := r.Context().Value(UserContextKey).(domain.User)
-		if !ok {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+func NewHandler(authSvc *AuthService, log *slog.Logger) *handler {
+	h := handler{
+		router:        httprouter.New(),
+		authSvc:       authSvc,
+		log:           log,
+		logMiddleware: NewLogMiddleware(log, "auth"),
+	}
 
-		components.Hello(u.FirstName).Render(r.Context(), w)
-	})
+	// Register routes
+	h.router.GET("/", h.secure)
+
+	// Set the auth middleware
+	h.authMiddleware = h.authSvc.AuthMiddleware()
+
+	return &h
+}
+
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.authMiddleware(h.logMiddleware(h.router)).ServeHTTP(w, r)
+}
+
+func (h *handler) secure(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	u, ok := r.Context().Value(UserContextKey).(domain.User)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	components.Hello(u.FirstName).Render(r.Context(), w)
 }
