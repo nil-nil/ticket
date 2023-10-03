@@ -58,6 +58,9 @@ func (a *AuthService) AuthMiddleware() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie(a.cookieName)
 			if err != nil || cookie == nil {
+				// Log here because auth middleware should be before log middleware so we can log the user's details
+				a.log.Info("", "status", http.StatusUnauthorized, "method", r.Method, "path", r.URL.Path, "client", r.RemoteAddr, "useragent", r.UserAgent())
+
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}

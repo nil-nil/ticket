@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"testing"
 
 	"github.com/nil-nil/ticket/internal/domain"
@@ -31,11 +33,11 @@ func TestAuthMiddleware(t *testing.T) {
 		ticketjwt.RS512,
 		64400,
 	)
-	authSvc := NewAuthService(placeholderAuthenticator, authProvider, nil, slog.New(&slog.TextHandler{}))
+	authSvc := NewAuthService(placeholderAuthenticator, authProvider, nil, slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 
 	mw := authSvc.AuthMiddleware()
 
-	t.Run("no auth cookie", func(t *testing.T) {
+	t.Run("NoAuthCookie", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		res := httptest.NewRecorder()
 		mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +47,7 @@ func TestAuthMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusSeeOther, res.Code, "expect redirect for auth failure")
 	})
 
-	t.Run("no auth cookie", func(t *testing.T) {
+	t.Run("ValidAuthCookie", func(t *testing.T) {
 		jwt, _ := authProvider.NewToken(domain.User{ID: 1})
 		cookie := http.Cookie{
 			Name:     authSvc.cookieName,
@@ -63,6 +65,62 @@ func TestAuthMiddleware(t *testing.T) {
 			w.WriteHeader(201)
 		})).ServeHTTP(res, req)
 
-		assert.Equal(t, http.StatusSeeOther, 201, "expect auth success to pass to next handler")
+		assert.Equal(t, 201, res.Result().StatusCode, "expect auth success to pass to next handler")
 	})
+}
+
+func TestLogin(t *testing.T) {
+	authProvider, _ := ticketjwt.NewJwtAuthProvider(
+		func(ctx context.Context, userID uint64) (user domain.User, err error) {
+			return domain.User{
+				ID:        1,
+				FirstName: "Tom",
+				LastName:  "Salmon",
+			}, nil
+		},
+		publicKey,
+		privateKey,
+		ticketjwt.RS512,
+		64400,
+	)
+	authSvc := NewAuthService(&mockUsernamePasswordAuth{}, authProvider, nil, slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+
+	t.Run("LoginSuccess", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.Form = url.Values{}
+		req.Form.Add("email", "success@success.com")
+		req.Form.Add("password", "verysecure")
+		res := httptest.NewRecorder()
+
+		authSvc.Login().ServeHTTP(res, req)
+
+		assert.Equal(t, http.StatusOK, res.Result().StatusCode, "expected success")
+		assert.Equal(t, "/", res.Header().Get("HX-Location"), "expected htmx redirect")
+	})
+
+	t.Run("LoginFailure", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.Form = url.Values{}
+		req.Form.Add("email", "fail@fail.com")
+		req.Form.Add("password", "sosecure")
+		res := httptest.NewRecorder()
+
+		authSvc.Login().ServeHTTP(res, req)
+
+		assert.Equal(t, http.StatusUnauthorized, res.Result().StatusCode, "expected failure")
+		assert.Equal(t, "", res.Header().Get("HX-Location"), "expected no htmx redirect")
+	})
+}
+
+type mockUsernamePasswordAuth struct{}
+
+func (m *mockUsernamePasswordAuth) AuthenticateUsernamePassword(_ context.Context, username string, password string) (domain.User, error) {
+	if username == "success@success.com" {
+		return domain.User{
+			ID:        1,
+			FirstName: "Tom",
+			LastName:  "Salmon",
+		}, nil
+	}
+	return domain.User{}, domain.ErrNotFound
 }
