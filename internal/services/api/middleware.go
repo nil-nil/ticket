@@ -28,7 +28,7 @@ func AuthMiddleware(authProvider AuthProvider) runtime.StrictEchoMiddlewareFunc 
 			}
 			authToken := submatch[1]
 
-			user, err := authProvider.GetUser(authToken)
+			user, err := authProvider.GetUser(echoCtx.Request().Context(), authToken)
 			if err != nil {
 				return echoCtx.NoContent(http.StatusUnauthorized), nil
 			}

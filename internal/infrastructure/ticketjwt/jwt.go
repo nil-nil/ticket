@@ -1,6 +1,7 @@
 package ticketjwt
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -18,7 +19,7 @@ var (
 	ErrGettingUser    = errors.New("error getting user for subject")
 )
 
-type GetUserFunc func(userID uint64) (user domain.User, err error)
+type GetUserFunc func(ctx context.Context, userID uint64) (user domain.User, err error)
 
 type jwtAuthProvider struct {
 	getUserFunc   GetUserFunc
@@ -28,7 +29,7 @@ type jwtAuthProvider struct {
 	tokenLifetime uint64
 }
 
-func (p jwtAuthProvider) GetUser(tokenString string) (user domain.User, err error) {
+func (p jwtAuthProvider) GetUser(ctx context.Context, tokenString string) (user domain.User, err error) {
 	token, err := p.getToken(tokenString)
 	if err != nil {
 		return domain.User{}, errors.Join(ErrGettingToken, err)
@@ -57,7 +58,7 @@ func (p jwtAuthProvider) GetUser(tokenString string) (user domain.User, err erro
 	}
 	userID = uint64(floatSub)
 
-	u, err := p.getUserFunc(userID)
+	u, err := p.getUserFunc(ctx, userID)
 	if err != nil {
 		return domain.User{}, errors.Join(ErrGettingSubject, err)
 	}

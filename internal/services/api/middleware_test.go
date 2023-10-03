@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,7 +27,7 @@ func (p mockAuthProvider) ValidateToken(_ string) (err error) {
 	return nil
 }
 
-func (p mockAuthProvider) GetUser(_ string) (user domain.User, err error) {
+func (p mockAuthProvider) GetUser(_ context.Context, _ string) (user domain.User, err error) {
 	return domain.User{}, nil
 }
 

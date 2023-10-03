@@ -21,7 +21,7 @@ type AuthProvider interface {
 	// GetUser verifies that a token is valid and trusted by us, identifies the user it is tied to, and returns that user.
 	//
 	// ok tells us if the token is valid. err gives us additional information if the toke is invalid.
-	GetUser(token string) (user domain.User, err error)
+	GetUser(ctx context.Context, token string) (user domain.User, err error)
 }
 
 type AuthService struct {
@@ -58,7 +58,7 @@ func (a *AuthService) AuthMiddleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			u, err := a.AuthProvider.GetUser(cookie.Value)
+			u, err := a.AuthProvider.GetUser(r.Context(), cookie.Value)
 			if err != nil {
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return

@@ -1,6 +1,7 @@
 package ticketjwt_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -76,7 +77,7 @@ func TestGetTokenUserSuccess(t *testing.T) {
 	token, err := p.NewToken(domain.User{ID: 1})
 	assert.NoError(t, err, "valid user should not error")
 
-	u, err := p.GetUser(token)
+	u, err := p.GetUser(context.Background(), token)
 	assert.NoError(t, err)
 	assert.Equal(t, userRepo.users[1], u)
 }
@@ -87,7 +88,7 @@ func TestGetTokenUserFailure(t *testing.T) {
 	token, err := p.NewToken(domain.User{ID: 1})
 	assert.NoError(t, err, "valid user should not error")
 
-	u, err := p.GetUser(token)
+	u, err := p.GetUser(context.Background(), token)
 	assert.Error(t, err)
 	assert.Equal(t, domain.User{}, u)
 }
@@ -96,7 +97,7 @@ type mockUserRepository struct {
 	users map[uint64]domain.User
 }
 
-func (m *mockUserRepository) GetUser(userID uint64) (domain.User, error) {
+func (m *mockUserRepository) GetUser(ctx context.Context, userID uint64) (domain.User, error) {
 	u, ok := m.users[userID]
 	if !ok {
 		return domain.User{}, fmt.Errorf("not found")
@@ -104,11 +105,11 @@ func (m *mockUserRepository) GetUser(userID uint64) (domain.User, error) {
 	return u, nil
 }
 
-func mockGetUserSuccessFunc(userID uint64) (user domain.User, err error) {
-	u, _ := userRepo.GetUser(1)
+func mockGetUserSuccessFunc(ctx context.Context, userID uint64) (user domain.User, err error) {
+	u, _ := userRepo.GetUser(ctx, 1)
 	return u, nil
 }
 
-func mockGetUserErrFunc(userID uint64) (user domain.User, err error) {
+func mockGetUserErrFunc(ctx context.Context, userID uint64) (user domain.User, err error) {
 	return domain.User{}, fmt.Errorf("mock error occurred")
 }

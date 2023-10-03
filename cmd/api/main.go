@@ -29,7 +29,7 @@ func main() {
 
 	apiServer := api.NewApi()
 	authProvider, err := ticketjwt.NewJwtAuthProvider(
-		func(userID uint64) (user domain.User, err error) {
+		func(ctx context.Context, userID uint64) (user domain.User, err error) {
 			return domain.User{ID: 999}, nil
 		},
 		[]byte(config.Auth.JWT.PublicKey),
