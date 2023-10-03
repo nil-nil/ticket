@@ -79,8 +79,7 @@ func TestGetTokenUserSuccess(t *testing.T) {
 	token, err := p.NewToken(domain.User{ID: 1})
 	assert.NoError(t, err, "valid user should not error")
 
-	ok, u, err := p.GetUser(token)
-	assert.True(t, ok)
+	u, err := p.GetUser(token)
 	assert.NoError(t, err)
 	assert.Equal(t, userRepo.users[1], u)
 }
@@ -91,8 +90,7 @@ func TestGetTokenUserFailure(t *testing.T) {
 	token, err := p.NewToken(domain.User{ID: 1})
 	assert.NoError(t, err, "valid user should not error")
 
-	ok, u, err := p.GetUser(token)
-	assert.False(t, ok)
+	u, err := p.GetUser(token)
 	assert.Error(t, err)
 	assert.Equal(t, domain.User{}, u)
 }

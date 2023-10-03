@@ -26,8 +26,8 @@ func (p mockAuthProvider) ValidateToken(_ string) (ok bool, err error) {
 	return true, nil
 }
 
-func (p mockAuthProvider) GetUser(_ string) (ok bool, user domain.User, err error) {
-	return true, domain.User{}, nil
+func (p mockAuthProvider) GetUser(_ string) (user domain.User, err error) {
+	return domain.User{}, nil
 }
 
 var table = []struct {
