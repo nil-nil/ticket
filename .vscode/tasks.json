@@ -17,7 +17,47 @@
       "label": "api",
       "type": "shell",
       "command": "air",
-      "args": ["-c", ".air.toml"]
+      "args": ["-c", ".api.air.toml"]
+    },
+    {
+      "label": "tailwindcss - watch",
+      "type": "shell",
+      "command": "tailwindcss",
+      "options": {
+        "cwd": "internal/frontend"
+      },
+      "args": ["-o", "assets/css/styles.min.css", "--minify", "--watch"]
+    },
+    {
+      "label": "tailwindcss - build",
+      "type": "shell",
+      "command": "tailwindcss",
+      "options": {
+        "cwd": "internal/frontend"
+      },
+      "args": ["-o", "assets/css/styles.min.css", "--minify"]
+    },
+    {
+      "label": "templ - build",
+      "type": "shell",
+      "command": "templ",
+      "args": ["generate", "-path", "./internal/frontend"]
+    },
+    {
+      "label": "templ - watch",
+      "type": "shell",
+      "command": "templ",
+      "args": ["generate", "-path", "./internal/frontend", "-watch"]
+    },
+    {
+      "label": "frontend - watch",
+      "dependsOn": ["templ - watch", "tailwindcss - watch", "templ - serve"]
+    },
+    {
+      "label": "templ - serve",
+      "type": "shell",
+      "command": "air",
+      "args": ["-c", ".frontend.air.toml"]
     }
   ]
 }
