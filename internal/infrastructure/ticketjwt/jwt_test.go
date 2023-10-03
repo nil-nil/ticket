@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/infrastructure/ticketjwt"
 	"github.com/stretchr/testify/assert"
@@ -27,6 +29,31 @@ func TestIncorrectAlg(t *testing.T) {
 
 	u, err := p.GetUser(context.Background(), "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.")
 	assert.ErrorIs(t, err, ticketjwt.ErrInvalidAlg)
+	assert.Equal(t, domain.User{}, u, "expect nil user when GetUser() errors")
+}
+
+func TestExpiredToken(t *testing.T) {
+	token := jwt.NewWithClaims(jwt.SigningMethodRS512, jwt.MapClaims{
+		"sub": uint64(1),
+		"nbf": time.Now().Unix(),
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(-1 * 24 * time.Hour).Unix(),
+	})
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
+	if err != nil {
+		assert.NoError(t, err, "mock key shouldn't error")
+	}
+	tokenString, err := token.SignedString(key)
+	assert.NoError(t, err, "signing mock token shouldn't error")
+
+	p, err := ticketjwt.NewJwtAuthProvider(mockGetUserSuccessFunc, publicKey, privateKey, ticketjwt.RS512, 1000)
+	assert.NoError(t, err, "NewJwtAuthProvider should not error")
+
+	err = p.ValidateToken(tokenString)
+	assert.ErrorIs(t, err, ticketjwt.ErrGettingToken)
+
+	u, err := p.GetUser(context.Background(), tokenString)
+	assert.ErrorIs(t, err, ticketjwt.ErrGettingToken)
 	assert.Equal(t, domain.User{}, u, "expect nil user when GetUser() errors")
 }
 
