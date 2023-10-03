@@ -10,6 +10,7 @@ import (
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/infrastructure/ticketjwt"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -129,6 +130,21 @@ func TestGetTokenUserFailure(t *testing.T) {
 
 	u, err := p.GetUser(context.Background(), token)
 	assert.Error(t, err)
+	assert.Equal(t, domain.User{}, u)
+}
+
+func TestUserDeleted(t *testing.T) {
+	userRepo.users[2] = domain.User{
+		ID:        2,
+		DeletedAt: ptr.To(time.Now()),
+	}
+	p, err := ticketjwt.NewJwtAuthProvider(userRepo.GetUser, publicKey, privateKey, ticketjwt.RS512, 1000)
+	assert.NoError(t, err, "NewJwtAuthProvider should not error")
+	token, err := p.NewToken(domain.User{ID: 2})
+	assert.NoError(t, err, "valid user should not error")
+
+	u, err := p.GetUser(context.Background(), token)
+	assert.ErrorIs(t, err, ticketjwt.ErrUserDeleted)
 	assert.Equal(t, domain.User{}, u)
 }
 

@@ -18,6 +18,7 @@ var (
 	ErrInvalidSubject = errors.New("token subject is not valid")
 	ErrGettingUser    = errors.New("error getting user for subject")
 	ErrInvalidAlg     = errors.New("invalid token alg")
+	ErrUserDeleted    = errors.New("user has been deleted")
 )
 
 type GetUserFunc func(ctx context.Context, userID uint64) (user domain.User, err error)
@@ -62,6 +63,10 @@ func (p jwtAuthProvider) GetUser(ctx context.Context, tokenString string) (user 
 	u, err := p.getUserFunc(ctx, userID)
 	if err != nil {
 		return domain.User{}, errors.Join(ErrGettingSubject, err)
+	}
+
+	if u.DeletedAt != nil {
+		return domain.User{}, ErrUserDeleted
 	}
 
 	return u, nil
