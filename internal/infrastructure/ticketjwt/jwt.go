@@ -17,6 +17,7 @@ var (
 	ErrGettingSubject = errors.New("token claims does not have a subject")
 	ErrInvalidSubject = errors.New("token subject is not valid")
 	ErrGettingUser    = errors.New("error getting user for subject")
+	ErrInvalidAlg     = errors.New("invalid token alg")
 )
 
 type GetUserFunc func(ctx context.Context, userID uint64) (user domain.User, err error)
@@ -103,7 +104,7 @@ func (p jwtAuthProvider) getToken(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		// Check the signing method
 		if t.Method.Alg() != p.signingMethod.String() {
-			return nil, fmt.Errorf("unexpected jwt signing method=%v", t.Header["alg"])
+			return nil, ErrInvalidAlg
 		}
 
 		return p.publicKey, nil

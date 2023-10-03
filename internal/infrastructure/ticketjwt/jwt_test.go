@@ -18,6 +18,18 @@ var (
 	}
 )
 
+func TestIncorrectAlg(t *testing.T) {
+	p, err := ticketjwt.NewJwtAuthProvider(mockGetUserSuccessFunc, publicKey, privateKey, ticketjwt.RS512, 1000)
+	assert.NoError(t, err, "NewJwtAuthProvider should not error")
+
+	err = p.ValidateToken("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.")
+	assert.ErrorIs(t, err, ticketjwt.ErrInvalidAlg)
+
+	u, err := p.GetUser(context.Background(), "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.")
+	assert.ErrorIs(t, err, ticketjwt.ErrInvalidAlg)
+	assert.Equal(t, domain.User{}, u, "expect nil user when GetUser() errors")
+}
+
 func TestUserSubjectFuncErr(t *testing.T) {
 	p, err := ticketjwt.NewJwtAuthProvider(mockGetUserSuccessFunc, publicKey, privateKey, ticketjwt.RS512, 1000)
 	assert.NoError(t, err, "NewJwtAuthProvider should not error")
