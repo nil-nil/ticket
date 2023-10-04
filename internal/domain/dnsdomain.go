@@ -3,16 +3,19 @@ package domain
 import (
 	"context"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type DNSDomain struct {
-	ID   uint64
-	Name string
+	ID     uint64
+	Tenant uuid.UUID
+	Name   string
 }
 
 type DNSDomainRepository interface {
-	GetDomains(context.Context) ([]DNSDomain, error)
-	CreateDomain(ctx context.Context, domain DNSDomain) (DNSDomain, error)
+	GetDomains(ctx context.Context, tenant uuid.UUID) ([]DNSDomain, error)
+	CreateDomain(ctx context.Context, tenant uuid.UUID, domain DNSDomain) (DNSDomain, error)
 }
 
 type DNSDomainService struct {
@@ -33,8 +36,8 @@ func NewDNSDomainService(repo DNSDomainRepository, eventDriver EventBusDriver, c
 	return &DNSDomainService{repo: repo, eventBus: evt, domainCache: cache}, nil
 }
 
-func (s *DNSDomainService) GetDomains(ctx context.Context) ([]DNSDomain, error) {
-	domains, err := s.repo.GetDomains(ctx)
+func (s *DNSDomainService) GetDomains(ctx context.Context, tenant uuid.UUID) ([]DNSDomain, error) {
+	domains, err := s.repo.GetDomains(ctx, tenant)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +47,8 @@ func (s *DNSDomainService) GetDomains(ctx context.Context) ([]DNSDomain, error) 
 	return domains, nil
 }
 
-func (s *DNSDomainService) CreateDomain(ctx context.Context, name string) (DNSDomain, error) {
-	domain, err := s.repo.CreateDomain(ctx, DNSDomain{Name: name})
+func (s *DNSDomainService) CreateDomain(ctx context.Context, tenant uuid.UUID, name string) (DNSDomain, error) {
+	domain, err := s.repo.CreateDomain(ctx, tenant, DNSDomain{Name: name})
 	if err != nil {
 		return DNSDomain{}, err
 	}
