@@ -10,7 +10,7 @@ import (
 
 type UserRepository interface {
 	Find(ctx context.Context, ID uuid.UUID) (User, error)
-	Create(ctx context.Context, FirstName string, LastName string) (User, error)
+	Create(ctx context.Context, Tenant uuid.UUID, FirstName string, LastName string, Email string) (User, error)
 }
 
 type User struct {
@@ -18,6 +18,7 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time
+	Tenant    uuid.UUID
 
 	FirstName string
 	LastName  string
@@ -41,8 +42,8 @@ func (s *UserService) GetUser(ctx context.Context, ID uuid.UUID) (User, error) {
 	return s.repo.Find(ctx, ID)
 }
 
-func (s *UserService) CreateUser(ctx context.Context, FirstName string, LastName string) (User, error) {
-	u, err := s.repo.Create(ctx, FirstName, LastName)
+func (s *UserService) CreateUser(ctx context.Context, Tenant uuid.UUID, FirstName string, LastName string, Email string) (User, error) {
+	u, err := s.repo.Create(ctx, Tenant, FirstName, LastName, Email)
 	if err != nil {
 		return User{}, err
 	}

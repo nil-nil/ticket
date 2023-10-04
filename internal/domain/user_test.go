@@ -16,7 +16,7 @@ func TestGetUser(t *testing.T) {
 
 	repo := mockUserRepository{
 		users: []domain.User{
-			{ID: uuid.New(), FirstName: "Bob", LastName: "Test", Email: "bob@test.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+			{ID: uuid.New(), Tenant: uuid.New(), FirstName: "Bob", LastName: "Test", Email: "bob@test.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
 
@@ -25,12 +25,11 @@ func TestGetUser(t *testing.T) {
 	svc := domain.NewUserService(&repo, &eventDrv)
 
 	t.Run("GetAValidUser", func(t *testing.T) {
-		theUUID := uuid.New()
-		theUser := domain.User{ID: theUUID, FirstName: "Barry", LastName: "Foo", Email: "barryfoo@example.com", CreatedAt: time.Now(), UpdatedAt: time.Now()}
-		repo.users = append(repo.users, theUser)
-		u, err := svc.GetUser(context.Background(), theUUID)
+		expect := domain.User{ID: uuid.New(), Tenant: uuid.New(), FirstName: "Barry", LastName: "Foo", Email: "barryfoo@example.com", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+		repo.users = append(repo.users, expect)
+		u, err := svc.GetUser(context.Background(), expect.ID)
 		assert.NoError(t, err, "getting a valid user should not error")
-		assert.Equal(t, theUser, u)
+		assert.Equal(t, expect, u)
 	})
 
 	t.Run("GetAnInvalidUser", func(t *testing.T) {
@@ -43,7 +42,7 @@ func TestGetUser(t *testing.T) {
 func TestCreateUser(t *testing.T) {
 	repo := mockUserRepository{
 		users: []domain.User{
-			{ID: uuid.New(), FirstName: "Bob", LastName: "Test", Email: "bobtest@qux.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+			{ID: uuid.New(), Tenant: uuid.New(), FirstName: "Bob", LastName: "Test", Email: "bobtest@qux.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
 
@@ -51,12 +50,19 @@ func TestCreateUser(t *testing.T) {
 	svc := domain.NewUserService(&repo, &eventDrv)
 
 	t.Run("CreateAValidUser", func(t *testing.T) {
-		first := "Barry"
-		last := "Jobson"
-		u, err := svc.CreateUser(context.Background(), first, last)
+		expect := domain.User{
+			FirstName: "Barry",
+			LastName:  "Jobson",
+			Email:     "barry@bar.com",
+			Tenant:    uuid.New(),
+		}
+		u, err := svc.CreateUser(context.Background(), expect.Tenant, expect.FirstName, expect.LastName, expect.Email)
 		assert.NoError(t, err, "creating a valid user should not error")
-		assert.Equal(t, u.FirstName, first)
-		assert.Equal(t, u.LastName, last)
+		assert.Equal(t, expect.FirstName, u.FirstName, "expect correct value")
+		assert.Equal(t, expect.LastName, u.LastName, "expect correct value")
+		assert.Equal(t, expect.Email, u.Email, "expect correct value")
+		assert.Equal(t, expect.Tenant, u.Tenant, "expect correct value")
+		assert.NotEqual(t, u.ID, uuid.Nil, "expect non-nil UUID")
 		assert.Equal(t, *eventDrv.EventSubject, fmt.Sprintf("users:%s:create", u.ID), "expected event matching subject")
 		assert.Equal(t, eventDrv.EventData, u, "expected matching event data")
 	})
@@ -76,11 +82,13 @@ func (r *mockUserRepository) Find(ctx context.Context, ID uuid.UUID) (domain.Use
 	return r.users[idx], nil
 }
 
-func (r *mockUserRepository) Create(ctx context.Context, FirstName string, LastName string) (domain.User, error) {
+func (r *mockUserRepository) Create(ctx context.Context, Tenant uuid.UUID, FirstName string, LastName string, Email string) (domain.User, error) {
 	u := domain.User{
 		ID:        uuid.New(),
+		Tenant:    Tenant,
 		FirstName: FirstName,
 		LastName:  LastName,
+		Email:     Email,
 	}
 	r.users = append(r.users, u)
 
