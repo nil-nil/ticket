@@ -3,6 +3,7 @@ package domain_test
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/nil-nil/ticket/internal/domain"
@@ -28,17 +29,20 @@ func TestDNSDomain(t *testing.T) {
 			2: d2,
 		}
 
-		domains, err := svc.GetDomains(context.Background())
+		got, err := svc.GetDomains(context.Background())
 		assert.NoError(t, err, "DNSDomainService.GetDomains() should not error")
-		assert.Equal(t, 2, len(domains), "Expected 2 domains")
+		assert.Equal(t, 2, len(got), "Expected 2 domains")
 		assert.Equal(t, d1, mockCache.cache["dnsdomains.1"], "Expected domain 1 to be cached")
 		assert.Equal(t, d2, mockCache.cache["dnsdomains.2"], "Expected domain 2 to be cached")
-		assert.Equal(t, []domain.DNSDomain{d1, d2}, domains, "Expected got domains to match repo")
+		expect := []domain.DNSDomain{d1, d2}
+		slices.SortFunc(expect, domainSliceSortFunc)
+		slices.SortFunc(got, domainSliceSortFunc)
+		assert.Equal(t, expect, got, "Expected got domains to match repo")
 	})
 
 	t.Run("TestCreateDomain", func(t *testing.T) {
 		d, err := svc.CreateDomain(context.Background(), "foo.com")
-		assert.NoError(t, err, "DNSDomainService.CreateDOmain() should not error")
+		assert.NoError(t, err, "DNSDomainService.CreateDomain() should not error")
 		assert.Equal(t, "foo.com", d.Name, "Created domain name should match")
 		assert.Equal(t, d, mockCache.cache[fmt.Sprintf("dnsdomains.%d", d.ID)], "Expected domain to be cached")
 	})
@@ -62,4 +66,14 @@ func (m *mockDNSDomainRepository) GetDomains(ctx context.Context) ([]domain.DNSD
 	}
 
 	return domains, nil
+}
+
+func domainSliceSortFunc(a, b domain.DNSDomain) int {
+	if a.ID == b.ID {
+		return 0
+	}
+	if a.ID < b.ID {
+		return -1
+	}
+	return 1
 }
