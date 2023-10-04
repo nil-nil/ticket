@@ -8,6 +8,7 @@ require (
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/emersion/go-smtp v0.18.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/google/uuid v1.3.1
 	github.com/gorilla/handlers v1.5.1
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/labstack/echo/v4 v4.11.1
@@ -35,7 +36,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect

@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/infrastructure/ticketjwt"
 	"github.com/stretchr/testify/assert"
@@ -20,10 +21,11 @@ var (
 )
 
 func TestAuthMiddleware(t *testing.T) {
+	testUUID := uuid.New()
 	authProvider, _ := ticketjwt.NewJwtAuthProvider(
-		func(ctx context.Context, userID uint64) (user domain.User, err error) {
+		func(ctx context.Context, userID uuid.UUID) (user domain.User, err error) {
 			return domain.User{
-				ID:        1,
+				ID:        testUUID,
 				FirstName: "Tom",
 				LastName:  "Salmon",
 			}, nil
@@ -48,7 +50,7 @@ func TestAuthMiddleware(t *testing.T) {
 	})
 
 	t.Run("ValidAuthCookie", func(t *testing.T) {
-		jwt, _ := authProvider.NewToken(domain.User{ID: 1})
+		jwt, _ := authProvider.NewToken(domain.User{ID: testUUID})
 		cookie := http.Cookie{
 			Name:     authSvc.cookieName,
 			Value:    jwt,
@@ -71,9 +73,9 @@ func TestAuthMiddleware(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	authProvider, _ := ticketjwt.NewJwtAuthProvider(
-		func(ctx context.Context, userID uint64) (user domain.User, err error) {
+		func(ctx context.Context, userID uuid.UUID) (user domain.User, err error) {
 			return domain.User{
-				ID:        1,
+				ID:        uuid.New(),
 				FirstName: "Tom",
 				LastName:  "Salmon",
 			}, nil
@@ -117,7 +119,7 @@ type mockUsernamePasswordAuth struct{}
 func (m *mockUsernamePasswordAuth) AuthenticateUsernamePassword(_ context.Context, username string, password string) (domain.User, error) {
 	if username == "success@success.com" {
 		return domain.User{
-			ID:        1,
+			ID:        uuid.New(),
 			FirstName: "Tom",
 			LastName:  "Salmon",
 		}, nil

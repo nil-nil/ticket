@@ -11,6 +11,7 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -23,7 +24,7 @@ type User struct {
 	FirstName string `json:"firstName"`
 
 	// Id ID
-	Id uint64 `json:"id"`
+	Id uuid.UUID `json:"id"`
 
 	// LastName User's family name
 	LastName  string             `json:"lastName"`

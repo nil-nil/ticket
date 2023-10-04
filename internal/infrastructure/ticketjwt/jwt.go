@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 )
 
@@ -21,7 +22,7 @@ var (
 	ErrUserDeleted    = errors.New("user has been deleted")
 )
 
-type GetUserFunc func(ctx context.Context, userID uint64) (user domain.User, err error)
+type GetUserFunc func(ctx context.Context, userID uuid.UUID) (user domain.User, err error)
 
 type jwtAuthProvider struct {
 	getUserFunc   GetUserFunc
@@ -40,8 +41,6 @@ func (p jwtAuthProvider) GetUser(ctx context.Context, tokenString string) (user 
 		return domain.User{}, ErrTokenInvalid
 	}
 
-	var userID uint64
-
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return domain.User{}, ErrGettingClaims
@@ -53,12 +52,17 @@ func (p jwtAuthProvider) GetUser(ctx context.Context, tokenString string) (user 
 		return domain.User{}, ErrGettingSubject
 	}
 
-	// The JSON decoder trats the number as a float64
-	floatSub, ok := sub.(float64)
+	// Assert that it's a string
+	strSub, ok := sub.(string)
 	if !ok {
 		return domain.User{}, ErrInvalidSubject
 	}
-	userID = uint64(floatSub)
+
+	// And parse the UUID
+	userID, err := uuid.Parse(strSub)
+	if err != nil {
+		return domain.User{}, errors.Join(ErrInvalidSubject, err)
+	}
 
 	u, err := p.getUserFunc(ctx, userID)
 	if err != nil {
@@ -79,7 +83,7 @@ func (p jwtAuthProvider) NewToken(user domain.User) (string, error) {
 		method = jwt.SigningMethodRS512
 	}
 
-	if user.ID == 0 {
+	if user.ID == uuid.Nil {
 		return "", fmt.Errorf("invalid jwt subject for user %+v", user)
 	}
 

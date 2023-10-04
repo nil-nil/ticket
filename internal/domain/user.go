@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type UserRepository interface {
-	Find(ctx context.Context, ID uint64) (User, error)
+	Find(ctx context.Context, ID uuid.UUID) (User, error)
 	Create(ctx context.Context, FirstName string, LastName string) (User, error)
 }
 
 type User struct {
-	ID        uint64 `eventbus:"id"`
+	ID        uuid.UUID `eventbus:"id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time
@@ -34,7 +36,7 @@ type UserService struct {
 	eventBus *EventBus[User]
 }
 
-func (s *UserService) GetUser(ctx context.Context, ID uint64) (User, error) {
+func (s *UserService) GetUser(ctx context.Context, ID uuid.UUID) (User, error) {
 	return s.repo.Find(ctx, ID)
 }
 

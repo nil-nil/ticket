@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/frontend/components"
 	"github.com/nil-nil/ticket/internal/infrastructure/ticketjwt"
@@ -40,9 +41,9 @@ func NewServer(config config.Config) *http.Server {
 	// Set up auth
 	// TODO: replace placeholder func with real function
 	authProvider, err := ticketjwt.NewJwtAuthProvider(
-		func(ctx context.Context, userID uint64) (user domain.User, err error) {
+		func(ctx context.Context, userID uuid.UUID) (user domain.User, err error) {
 			return domain.User{
-				ID:        1,
+				ID:        uuid.New(),
 				FirstName: "Tom",
 				LastName:  "Salmon",
 			}, nil
@@ -111,7 +112,7 @@ type placeholderAuth struct{}
 
 func (p *placeholderAuth) AuthenticateUsernamePassword(_ context.Context, username string, password string) (domain.User, error) {
 	return domain.User{
-		ID:        1,
+		ID:        uuid.New(),
 		FirstName: "Tom",
 		LastName:  "Salmon",
 	}, nil

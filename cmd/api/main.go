@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nil-nil/ticket/internal/domain"
@@ -29,8 +30,8 @@ func main() {
 
 	apiServer := api.NewApi()
 	authProvider, err := ticketjwt.NewJwtAuthProvider(
-		func(ctx context.Context, userID uint64) (user domain.User, err error) {
-			return domain.User{ID: 999}, nil
+		func(ctx context.Context, userID uuid.UUID) (user domain.User, err error) {
+			return domain.User{ID: uuid.New()}, nil
 		},
 		[]byte(config.Auth.JWT.PublicKey),
 		[]byte(config.Auth.JWT.PrivateKey),

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/nil-nil/ticket/internal/infrastructure/ristrettocache"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("normal process", func(t *testing.T) {
-		item := domain.User{ID: 1, FirstName: "Bob", LastName: "Test"}
+		item := domain.User{ID: uuid.New(), FirstName: "Bob", LastName: "Test"}
 		key := "testitem"
 		err := ristrettoCache.Set(key, item)
 		assert.NoError(t, err, "setting cache item should probably not error")

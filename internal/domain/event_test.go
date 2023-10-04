@@ -3,6 +3,7 @@ package domain_test
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
@@ -81,7 +82,7 @@ func TestPublishing(t *testing.T) {
 		eventBus, err := domain.NewEventBus[domain.User]("users", &m)
 		assert.NoError(t, err, "NewEventBus() should not error when a prefix is given")
 
-		u := domain.User{ID: 1}
+		u := domain.User{ID: uuid.New()}
 		err = eventBus.Publish("1", domain.CreateEvent, u)
 		assert.NoError(t, err, "valid publish shouldn't error")
 		assert.Equal(t, *m.EventSubject, "users:1:create", "expected event matching subject")
