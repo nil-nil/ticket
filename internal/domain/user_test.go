@@ -16,7 +16,7 @@ func TestGetUser(t *testing.T) {
 
 	repo := mockUserRepository{
 		users: []domain.User{
-			{ID: uuid.New(), FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+			{ID: uuid.New(), FirstName: "Bob", LastName: "Test", Email: "bob@test.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
 
@@ -26,7 +26,7 @@ func TestGetUser(t *testing.T) {
 
 	t.Run("GetAValidUser", func(t *testing.T) {
 		theUUID := uuid.New()
-		theUser := domain.User{ID: theUUID, FirstName: "Barry", LastName: "Foo", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+		theUser := domain.User{ID: theUUID, FirstName: "Barry", LastName: "Foo", Email: "barryfoo@example.com", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 		repo.users = append(repo.users, theUser)
 		u, err := svc.GetUser(context.Background(), theUUID)
 		assert.NoError(t, err, "getting a valid user should not error")
@@ -43,7 +43,7 @@ func TestGetUser(t *testing.T) {
 func TestCreateUser(t *testing.T) {
 	repo := mockUserRepository{
 		users: []domain.User{
-			{ID: uuid.New(), FirstName: "Bob", LastName: "Test", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+			{ID: uuid.New(), FirstName: "Bob", LastName: "Test", Email: "bobtest@qux.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		},
 	}
 

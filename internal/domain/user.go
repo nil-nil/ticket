@@ -21,6 +21,7 @@ type User struct {
 
 	FirstName string
 	LastName  string
+	Email     string
 }
 
 func NewUserService(repo UserRepository, eventBusDriver EventBusDriver) *UserService {
