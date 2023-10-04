@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type AliasRepository interface {
-	Find(context.Context, FindAliasParameters) (Alias, error)
-	Create(ctx context.Context, user string, domain string) (Alias, error)
-	Delete(ctx context.Context, ID uint64) (Alias, error)
+	Find(ctx context.Context, Tenant uuid.UUID, params FindAliasParameters) (Alias, error)
+	Create(ctx context.Context, Tenant uuid.UUID, user string, domain string) (Alias, error)
+	Delete(ctx context.Context, Tenant uuid.UUID, ID uint64) (Alias, error)
 }
 
 type FindAliasParameters struct {
@@ -20,6 +22,7 @@ type FindAliasParameters struct {
 
 type Alias struct {
 	ID        uint64
+	Tenant    uuid.UUID
 	User      string
 	Domain    string
 	DeletedAt *time.Time
@@ -39,12 +42,12 @@ type AliasService struct {
 	repo AliasRepository
 }
 
-func (s *AliasService) Find(ctx context.Context, params FindAliasParameters) (Alias, error) {
-	return s.repo.Find(ctx, params)
+func (s *AliasService) Find(ctx context.Context, Tenant uuid.UUID, params FindAliasParameters) (Alias, error) {
+	return s.repo.Find(ctx, Tenant, params)
 }
 
-func (s *AliasService) Create(ctx context.Context, user string, domain string) (Alias, error) {
-	alias, err := s.repo.Create(ctx, user, domain)
+func (s *AliasService) Create(ctx context.Context, Tenant uuid.UUID, user string, domain string) (Alias, error) {
+	alias, err := s.repo.Create(ctx, Tenant, user, domain)
 	if err != nil {
 		return Alias{}, err
 	}
@@ -52,8 +55,8 @@ func (s *AliasService) Create(ctx context.Context, user string, domain string) (
 	return alias, nil
 }
 
-func (s *AliasService) Delete(ctx context.Context, ID uint64) (Alias, error) {
-	alias, err := s.repo.Delete(ctx, ID)
+func (s *AliasService) Delete(ctx context.Context, Tenant uuid.UUID, ID uint64) (Alias, error) {
+	alias, err := s.repo.Delete(ctx, Tenant, ID)
 	if err != nil {
 		return Alias{}, err
 	}

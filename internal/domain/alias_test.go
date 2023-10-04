@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/ptr"
@@ -32,25 +33,38 @@ func TestAliasEmail(t *testing.T) {
 }
 
 func TestGetAlias(t *testing.T) {
+	tenant1 := uuid.New()
+	tenant2 := uuid.New()
 	var repo = mockAliasRepo{
 		aliases: map[string]domain.Alias{
-			"test@test.com":      {ID: 1, User: "test", Domain: "test.com"},
-			"sample@example.com": {ID: 1, User: "sample", Domain: "example.com"},
+			"test@test.com":      {ID: 1, Tenant: tenant1, User: "test", Domain: "test.com"},
+			"sample@example.com": {ID: 2, Tenant: tenant1, User: "sample", Domain: "example.com"},
 		},
 	}
 
 	svc := domain.NewAliasService(&repo)
 
-	alias, err := svc.Find(context.Background(), domain.FindAliasParameters{User: ptr.To("bob"), Domain: ptr.To("sample.com")})
-	assert.Equal(t, domain.Alias{}, alias, "alias should be empty")
-	assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
+	t.Run("NotFoundAtAll", func(t *testing.T) {
+		alias, err := svc.Find(context.Background(), tenant1, domain.FindAliasParameters{User: ptr.To("bob"), Domain: ptr.To("sample.com")})
+		assert.Equal(t, domain.Alias{}, alias, "alias should be empty")
+		assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
+	})
 
-	alias, err = svc.Find(context.Background(), domain.FindAliasParameters{User: ptr.To("test"), Domain: ptr.To("test.com")})
-	assert.Equal(t, domain.Alias{ID: 1, User: "test", Domain: "test.com"}, alias, "alias should not be empty")
-	assert.NoError(t, err, "error should be nil")
+	t.Run("Success", func(t *testing.T) {
+		alias, err := svc.Find(context.Background(), tenant1, domain.FindAliasParameters{User: ptr.To("test"), Domain: ptr.To("test.com")})
+		assert.Equal(t, domain.Alias{ID: 1, Tenant: tenant1, User: "test", Domain: "test.com"}, alias, "alias should not be empty")
+		assert.NoError(t, err, "error should be nil")
+	})
+
+	t.Run("WrongTenant", func(t *testing.T) {
+		alias, err := svc.Find(context.Background(), tenant2, domain.FindAliasParameters{User: ptr.To("test"), Domain: ptr.To("test.com")})
+		assert.Equal(t, domain.Alias{}, alias, "alias should be empty")
+		assert.EqualError(t, domain.ErrNotFound, err.Error(), "expected not found error")
+	})
 }
 
 func TestCreateAlias(t *testing.T) {
+	tenant1 := uuid.New()
 	var repo = mockAliasRepo{
 		aliases: map[string]domain.Alias{
 			"test@test.com":      {ID: 1, User: "test", Domain: "test.com"},
@@ -60,22 +74,23 @@ func TestCreateAlias(t *testing.T) {
 
 	svc := domain.NewAliasService(&repo)
 
-	alias, err := svc.Create(context.Background(), "bob", "sample.com")
-	assert.Equal(t, domain.Alias{ID: 3, User: "bob", Domain: "sample.com"}, alias, "alias should not be empty")
+	alias, err := svc.Create(context.Background(), tenant1, "bob", "sample.com")
+	assert.Equal(t, domain.Alias{ID: 3, Tenant: tenant1, User: "bob", Domain: "sample.com"}, alias, "alias should not be empty")
 	assert.NoError(t, err, "error should be nil")
 }
 
 func TestDeleteAlias(t *testing.T) {
+	tenant1 := uuid.New()
 	var repo = mockAliasRepo{
 		aliases: map[string]domain.Alias{
-			"test@test.com":      {ID: 1, User: "test", Domain: "test.com"},
-			"sample@example.com": {ID: 2, User: "sample", Domain: "example.com"},
+			"test@test.com":      {ID: 1, Tenant: tenant1, User: "test", Domain: "test.com"},
+			"sample@example.com": {ID: 2, Tenant: tenant1, User: "sample", Domain: "example.com"},
 		},
 	}
 
 	svc := domain.NewAliasService(&repo)
 
-	alias, err := svc.Delete(context.Background(), 2)
+	alias, err := svc.Delete(context.Background(), tenant1, 2)
 	assert.Equal(t, repo.aliases["sample@example.com"], alias, "alias should not be empty")
 	assert.NotNil(t, alias.DeletedAt, "DeletedAt should be set now")
 	assert.NoError(t, err, "error should be nil")
@@ -85,30 +100,30 @@ type mockAliasRepo struct {
 	aliases map[string]domain.Alias
 }
 
-func (m *mockAliasRepo) Find(ctx context.Context, params domain.FindAliasParameters) (domain.Alias, error) {
+func (m *mockAliasRepo) Find(ctx context.Context, tenant uuid.UUID, params domain.FindAliasParameters) (domain.Alias, error) {
 	if params.User == nil || params.Domain == nil {
 		return domain.Alias{}, domain.ErrNotFound
 	}
 	email := fmt.Sprintf("%s@%s", *params.User, *params.Domain)
 
 	alias, ok := m.aliases[email]
-	if !ok {
+	if !ok || alias.Tenant != tenant {
 		return domain.Alias{}, domain.ErrNotFound
 	}
 
 	return alias, nil
 }
 
-func (m *mockAliasRepo) Create(ctx context.Context, user string, mailDomain string) (domain.Alias, error) {
+func (m *mockAliasRepo) Create(ctx context.Context, tenant uuid.UUID, user string, mailDomain string) (domain.Alias, error) {
 	email := fmt.Sprintf("%s@%s", user, mailDomain)
-	m.aliases[email] = domain.Alias{Domain: mailDomain, User: user, ID: m.getNextId()}
+	m.aliases[email] = domain.Alias{Tenant: tenant, Domain: mailDomain, User: user, ID: m.getNextId()}
 	return m.aliases[email], nil
 }
 
-func (m *mockAliasRepo) Delete(ctx context.Context, ID uint64) (domain.Alias, error) {
+func (m *mockAliasRepo) Delete(ctx context.Context, tenant uuid.UUID, ID uint64) (domain.Alias, error) {
 	var alias domain.Alias
 	for k := range m.aliases {
-		if m.aliases[k].ID == ID {
+		if m.aliases[k].ID == ID && m.aliases[k].Tenant == tenant {
 			alias = m.aliases[k]
 			now := time.Now()
 			alias.DeletedAt = &now
