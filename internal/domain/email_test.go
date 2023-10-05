@@ -12,7 +12,7 @@ import (
 
 func TestCreateEmail(t *testing.T) {
 	repo := &mockCreateEmailRepository{
-		emails: map[uint64]domain.Email{},
+		emails: make([]domain.Email, 0, 512),
 	}
 
 	t.Run("ValidEmailNoDate", func(t *testing.T) {
@@ -47,12 +47,11 @@ func TestCreateEmail(t *testing.T) {
 }
 
 type mockCreateEmailRepository struct {
-	emails map[uint64]domain.Email
+	emails []domain.Email
 }
 
 func (m *mockCreateEmailRepository) CreateEmail(ctx context.Context, email domain.Email) (domain.Email, error) {
-	email.ID = nextMapKey(m.emails)
-	m.emails[email.ID] = email
+	m.emails = append(m.emails, email)
 
 	return email, nil
 }

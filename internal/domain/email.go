@@ -5,10 +5,12 @@ import (
 	"net/mail"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Email struct {
-	ID         uint64
+	ID         uuid.UUID
 	Subject    string
 	Sender     string
 	Recipients []string
@@ -33,7 +35,7 @@ func CreateEmail(ctx context.Context, repo EmailCreator, msg mail.Message) (Emai
 	for _, recipient := range recipients {
 		recipientEmails = append(recipientEmails, removeNames(recipient))
 	}
-	return repo.CreateEmail(ctx, Email{Message: msg, Date: date, Subject: subject, Sender: sender, Recipients: recipientEmails})
+	return repo.CreateEmail(ctx, Email{ID: uuid.New(), Message: msg, Date: date, Subject: subject, Sender: sender, Recipients: recipientEmails})
 }
 
 func removeNames(address string) string {
