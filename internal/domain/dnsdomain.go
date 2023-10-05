@@ -8,7 +8,7 @@ import (
 )
 
 type DNSDomain struct {
-	ID     uint64
+	ID     uuid.UUID
 	Tenant uuid.UUID
 	Name   string
 }
@@ -42,17 +42,17 @@ func (s *DNSDomainService) GetDomains(ctx context.Context, tenant uuid.UUID) ([]
 		return nil, err
 	}
 	for _, domain := range domains {
-		s.domainCache.Set(fmt.Sprint(domain.ID), domain)
+		s.domainCache.Set(domain.ID.String(), domain)
 	}
 	return domains, nil
 }
 
 func (s *DNSDomainService) CreateDomain(ctx context.Context, tenant uuid.UUID, name string) (DNSDomain, error) {
-	domain, err := s.repo.CreateDomain(ctx, tenant, DNSDomain{Name: name})
+	domain, err := s.repo.CreateDomain(ctx, tenant, DNSDomain{ID: uuid.New(), Tenant: tenant, Name: name})
 	if err != nil {
 		return DNSDomain{}, err
 	}
-	s.domainCache.Set(fmt.Sprint(domain.ID), domain)
+	s.domainCache.Set(domain.ID.String(), domain)
 
 	return domain, nil
 }

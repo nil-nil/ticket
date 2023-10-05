@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestDNSDomain(t *testing.T) {
-	repo := &mockDNSDomainRepository{domains: make(map[uint64]domain.DNSDomain, 512)}
+	repo := &mockDNSDomainRepository{domains: make([]domain.DNSDomain, 512)}
 	svc, err := domain.NewDNSDomainService(repo, &mockEventBusDriver{}, mockCache)
 	assert.NoError(t, err, "domain.NewDNSDomainService() should not error")
 
@@ -20,26 +21,26 @@ func TestDNSDomain(t *testing.T) {
 
 	t.Run("TestGetDomains", func(t *testing.T) {
 		d1 := domain.DNSDomain{
-			ID:     1,
+			ID:     uuid.New(),
 			Name:   "test.com",
 			Tenant: tenant1,
 		}
 		d2 := domain.DNSDomain{
-			ID:     2,
+			ID:     uuid.New(),
 			Name:   "example.com",
 			Tenant: tenant1,
 		}
-		repo.domains = map[uint64]domain.DNSDomain{
-			1: d1,
-			2: d2,
+		repo.domains = []domain.DNSDomain{
+			d1,
+			d2,
 		}
 
 		t.Run("CorrectTenant", func(t *testing.T) {
 			got, err := svc.GetDomains(context.Background(), tenant1)
 			assert.NoError(t, err, "DNSDomainService.GetDomains() should not error")
 			assert.Equal(t, 2, len(got), "Expected 2 domains")
-			assert.Equal(t, d1, mockCache.cache["dnsdomains.1"], "Expected domain 1 to be cached")
-			assert.Equal(t, d2, mockCache.cache["dnsdomains.2"], "Expected domain 2 to be cached")
+			assert.Equal(t, d1, mockCache.cache["dnsdomains."+d1.ID.String()], "Expected domain 1 to be cached")
+			assert.Equal(t, d2, mockCache.cache["dnsdomains."+d2.ID.String()], "Expected domain 2 to be cached")
 			expect := []domain.DNSDomain{d1, d2}
 			slices.SortFunc(expect, domainSliceSortFunc)
 			slices.SortFunc(got, domainSliceSortFunc)
@@ -58,18 +59,19 @@ func TestDNSDomain(t *testing.T) {
 		assert.NoError(t, err, "DNSDomainService.CreateDomain() should not error")
 		assert.Equal(t, "foo.com", d.Name, "Created domain name should match")
 		assert.Equal(t, tenant1, d.Tenant, "Created domain tenant should match")
-		assert.Equal(t, d, mockCache.cache[fmt.Sprintf("dnsdomains.%d", d.ID)], "Expected domain to be cached")
+		assert.Equal(t, d, mockCache.cache[fmt.Sprintf("dnsdomains.%s", d.ID)], "Expected domain to be cached")
 	})
 }
 
 type mockDNSDomainRepository struct {
-	domains map[uint64]domain.DNSDomain
+	domains []domain.DNSDomain
 }
 
 func (m *mockDNSDomainRepository) CreateDomain(ctx context.Context, tenant uuid.UUID, d domain.DNSDomain) (domain.DNSDomain, error) {
-	d.ID = nextMapKey(m.domains)
-	d.Tenant = tenant
-	m.domains[d.ID] = d
+	if d.Tenant != tenant {
+		return d, errors.New("tenant doesn't match")
+	}
+	m.domains = append(m.domains, d)
 
 	return d, nil
 }
@@ -89,7 +91,7 @@ func domainSliceSortFunc(a, b domain.DNSDomain) int {
 	if a.ID == b.ID {
 		return 0
 	}
-	if a.ID < b.ID {
+	if a.ID.String() < b.ID.String() {
 		return -1
 	}
 	return 1
