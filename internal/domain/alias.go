@@ -10,18 +10,18 @@ import (
 
 type AliasRepository interface {
 	Find(ctx context.Context, Tenant uuid.UUID, params FindAliasParameters) (Alias, error)
-	Create(ctx context.Context, Tenant uuid.UUID, user string, domain string) (Alias, error)
-	Delete(ctx context.Context, Tenant uuid.UUID, ID uint64) (Alias, error)
+	Create(ctx context.Context, alias Alias) error
+	Delete(ctx context.Context, Tenant uuid.UUID, ID uuid.UUID) (Alias, error)
 }
 
 type FindAliasParameters struct {
-	ID     *uint64
+	ID     *uuid.UUID
 	Domain *string
 	User   *string
 }
 
 type Alias struct {
-	ID        uint64
+	ID        uuid.UUID
 	Tenant    uuid.UUID
 	User      string
 	Domain    string
@@ -46,8 +46,9 @@ func (s *AliasService) Find(ctx context.Context, Tenant uuid.UUID, params FindAl
 	return s.repo.Find(ctx, Tenant, params)
 }
 
-func (s *AliasService) Create(ctx context.Context, Tenant uuid.UUID, user string, domain string) (Alias, error) {
-	alias, err := s.repo.Create(ctx, Tenant, user, domain)
+func (s *AliasService) Create(ctx context.Context, tenant uuid.UUID, user string, domain string) (Alias, error) {
+	alias := Alias{ID: uuid.New(), Tenant: tenant, User: user, Domain: domain}
+	err := s.repo.Create(ctx, alias)
 	if err != nil {
 		return Alias{}, err
 	}
@@ -55,7 +56,7 @@ func (s *AliasService) Create(ctx context.Context, Tenant uuid.UUID, user string
 	return alias, nil
 }
 
-func (s *AliasService) Delete(ctx context.Context, Tenant uuid.UUID, ID uint64) (Alias, error) {
+func (s *AliasService) Delete(ctx context.Context, Tenant uuid.UUID, ID uuid.UUID) (Alias, error) {
 	alias, err := s.repo.Delete(ctx, Tenant, ID)
 	if err != nil {
 		return Alias{}, err

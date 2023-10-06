@@ -33,6 +33,7 @@ type MailServerService struct {
 	aliasEventBus *domain.EventBus[domain.Alias]
 }
 
+// Observe events relating to domain.Alias and refresh the cache for the domain
 func (s *MailServerService) ObserveAliasEvents(eventType domain.EventType, data domain.Alias) {
 	aliases, err := s.repo.GetAliases(context.Background(), &data.Domain)
 	if err != nil {
@@ -69,7 +70,7 @@ func (s *MailServerService) GetAlias(ctx context.Context, user string, mailDomai
 	return domain.Alias{}, ErrAliasNotFound
 }
 
-func (s *MailServerService) CreateEmail(ctx context.Context, msg mail.Message) (domain.Email, error) {
+func (s *MailServerService) CreateEmail(ctx context.Context, msg mail.Message) ([]domain.Email, error) {
 	return domain.CreateEmail(ctx, s.repo, msg)
 }
 

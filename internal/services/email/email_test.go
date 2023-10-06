@@ -5,8 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 func TestValidateSenderAddress(t *testing.T) {
@@ -23,12 +25,11 @@ func TestValidateSenderAddress(t *testing.T) {
 }
 
 func TestValidateRecipientAddress(t *testing.T) {
-	now := time.Now()
 	repo := &mockMailServerRepository{
 		authoritativeDomains: []string{"test.com"},
 		aliases: []domain.Alias{
-			{User: "test", Domain: "test.com", ID: 1},
-			{User: "bob", Domain: "test.com", ID: 2, DeletedAt: &now},
+			{User: "test", Domain: "test.com", ID: uuid.New()},
+			{User: "bob", Domain: "test.com", ID: uuid.New(), DeletedAt: ptr.To(time.Now())},
 		},
 	}
 
@@ -83,7 +84,10 @@ Content-Transfer-Encoding: quoted-printable
 	`
 
 		repo := &mockMailServerRepository{
-			emails: map[uint64]domain.Email{},
+			emails: make([]domain.Email, 0, 1),
+			aliases: []domain.Alias{
+				{ID: uuid.New(), Tenant: uuid.New(), User: "test", Domain: "test.com"},
+			},
 		}
 
 		server := NewServer(repo, mockCache, &mockEventBusDriver{}, func(username, password string) (domain.User, error) { return domain.User{}, nil })
@@ -91,8 +95,7 @@ Content-Transfer-Encoding: quoted-printable
 		err := server.ReceiveData(strings.NewReader(message))
 		assert.NoError(t, err, "Valid Email shouldn't error")
 
-		email, ok := repo.emails[1]
-		assert.True(t, ok, "email should be created in repo")
+		email := repo.emails[0]
 		assert.Equal(t, "An example Subject", email.Subject, "subject should match")
 		assert.True(t, email.Date.Equal(time.Date(2023, 9, 12, 15, 15, 01, 0, &time.Location{})), "Date should match header date")
 	})
@@ -101,7 +104,7 @@ Content-Transfer-Encoding: quoted-printable
 		message := "lksfnlksgnlkesfn;kaef"
 
 		repo := &mockMailServerRepository{
-			emails: map[uint64]domain.Email{},
+			emails: []domain.Email{},
 		}
 
 		server := NewServer(repo, mockCache, &mockEventBusDriver{}, func(username, password string) (domain.User, error) { return domain.User{}, nil })

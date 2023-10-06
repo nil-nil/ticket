@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/nil-nil/ticket/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,8 +29,9 @@ func TestIsAuthoritative(t *testing.T) {
 }
 
 func TestGetAlias(t *testing.T) {
+	alias1 := domain.Alias{Domain: "example.com", User: "test", ID: uuid.New()}
 	repo := &mockMailServerRepository{
-		aliases: []domain.Alias{{Domain: "example.com", User: "test", ID: 1}},
+		aliases: []domain.Alias{alias1},
 	}
 	svc, err := NewMailServerService(repo, mockCache, &mockEventBusDriver{})
 	assert.NoError(t, err, "NewMailServerService shoudln't error")
@@ -37,7 +39,7 @@ func TestGetAlias(t *testing.T) {
 	t.Run("ExistingAlias", func(t *testing.T) {
 		alias, err := svc.GetAlias(context.Background(), "test", "example.com")
 		assert.NoError(t, err)
-		assert.Equal(t, domain.Alias{Domain: "example.com", User: "test", ID: 1}, alias)
+		assert.Equal(t, alias1, alias)
 		assert.Equal(t, repo.aliases, mockCache.cache["mailaliases.example.com"], "should be cached now")
 	})
 
@@ -49,20 +51,21 @@ func TestGetAlias(t *testing.T) {
 }
 
 func TestObserver(t *testing.T) {
+	alias1 := domain.Alias{Domain: "test.com", User: "test", ID: uuid.New()}
 	repo := &mockMailServerRepository{
-		aliases: []domain.Alias{{Domain: "test.com", User: "test", ID: 1}},
+		aliases: []domain.Alias{alias1},
 	}
 	svc, err := NewMailServerService(repo, mockCache, &mockEventBusDriver{})
 	assert.NoError(t, err, "NewMailServerService shoudln't error")
 
-	svc.ObserveAliasEvents(domain.CreateEvent, domain.Alias{ID: 2, User: "test2", Domain: "test.com"})
-	assert.Equal(t, []domain.Alias{{Domain: "test.com", User: "test", ID: 1}}, mockCache.cache["mailaliases.test.com"], "cache should be refreshed")
+	svc.ObserveAliasEvents(domain.CreateEvent, domain.Alias{ID: uuid.New(), User: "test2", Domain: "test.com"})
+	assert.Equal(t, []domain.Alias{alias1}, mockCache.cache["mailaliases.test.com"], "cache should be refreshed")
 }
 
 type mockMailServerRepository struct {
 	authoritativeDomains []string
 	aliases              []domain.Alias
-	emails               map[uint64]domain.Email
+	emails               []domain.Email
 }
 
 func (m *mockMailServerRepository) GetAuthoritativeDomains(ctx context.Context) ([]string, error) {
@@ -82,20 +85,20 @@ func (m *mockMailServerRepository) GetAliases(ctx context.Context, mailDomain *s
 	return m.aliases, nil
 }
 
-func (m *mockMailServerRepository) CreateEmail(ctx context.Context, email domain.Email) (domain.Email, error) {
-	email.ID = func(values map[uint64]domain.Email) uint64 {
-		var lastKey uint64
-		for k := range values {
-			if k > lastKey {
-				lastKey = k
-			}
+func (m *mockMailServerRepository) CreateEmails(ctx context.Context, emails []domain.Email) error {
+	m.emails = append(m.emails, emails...)
+
+	return nil
+}
+
+func (m *mockMailServerRepository) FindAlias(ctx context.Context, user, dnsDomain string) (domain.Alias, error) {
+	for _, alias := range m.aliases {
+		if alias.User == user && alias.Domain == dnsDomain {
+			return alias, nil
 		}
+	}
 
-		return lastKey + 1
-	}(m.emails)
-	m.emails[email.ID] = email
-
-	return email, nil
+	return domain.Alias{}, domain.ErrNotFound
 }
 
 type mockCacheDriver struct {

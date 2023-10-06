@@ -2,6 +2,8 @@ package domain
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/mail"
 	"strings"
 	"time"
@@ -10,19 +12,21 @@ import (
 )
 
 type Email struct {
-	ID         uuid.UUID
-	Subject    string
-	Sender     string
-	Recipients []string
-	Date       time.Time
-	Message    mail.Message
+	ID        uuid.UUID
+	Tenant    uuid.UUID
+	Subject   string
+	Sender    string
+	Recipient uuid.UUID
+	Date      time.Time
+	Message   mail.Message
 }
 
 type EmailCreator interface {
-	CreateEmail(ctx context.Context, email Email) (Email, error)
+	CreateEmails(ctx context.Context, emails []Email) error
+	FindAlias(ctx context.Context, user, domain string) (Alias, error)
 }
 
-func CreateEmail(ctx context.Context, repo EmailCreator, msg mail.Message) (Email, error) {
+func CreateEmail(ctx context.Context, repo EmailCreator, msg mail.Message) ([]Email, error) {
 	date, err := msg.Header.Date()
 	if err != nil {
 		date = time.Now()
@@ -31,11 +35,24 @@ func CreateEmail(ctx context.Context, repo EmailCreator, msg mail.Message) (Emai
 	subject := msg.Header.Get("Subject")
 	sender := removeNames(msg.Header.Get("From"))
 	recipients := strings.Split(msg.Header.Get("To"), ",")
-	recipientEmails := make([]string, 0, len(recipients))
+	emails := make([]Email, 0, len(recipients))
 	for _, recipient := range recipients {
-		recipientEmails = append(recipientEmails, removeNames(recipient))
+		address := removeNames(recipient)
+		parts := strings.Split(address, "@")
+		alias, err := repo.FindAlias(ctx, parts[0], parts[1])
+		if errors.Is(err, ErrNotFound) {
+			continue
+		} else if err != nil {
+			// TODO: log the error
+			return nil, fmt.Errorf("Alias not available: %w", err)
+		}
+		emails = append(emails, Email{ID: uuid.New(), Tenant: alias.Tenant, Message: msg, Date: date, Subject: subject, Sender: sender, Recipient: alias.ID})
 	}
-	return repo.CreateEmail(ctx, Email{ID: uuid.New(), Message: msg, Date: date, Subject: subject, Sender: sender, Recipients: recipientEmails})
+	err = repo.CreateEmails(ctx, emails)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create emails: %w", err)
+	}
+	return emails, nil
 }
 
 func removeNames(address string) string {
